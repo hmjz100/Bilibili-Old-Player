@@ -1039,9 +1039,7 @@ class Danmaku {
                     menu = menu.concat(this.defMenu).reverse();
                     menu.unshift({
                         type: 'function',
-                        text: that._isVideoInfoPanelOpened()
-                            ? '<span class="active">视频统计信息</span>'
-                            : '视频统计信息',
+                        text: that._isVideoInfoPanelOpened() ? '<span class="active">视频统计信息</span>' : '视频统计信息',
                         click: function () {
                             if (that._isVideoInfoPanelOpened()) {
                                 that._hideVideoInfoPanel();

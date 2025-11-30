@@ -2,8 +2,9 @@
 
 <img width="90" src="bilibiliplayer/images/ploading.gif" alt="logo">
 
-# bilibiliplayer
-[B站](//www.bilibili.com)在2019 年 12 月 09 日弃用的经典播放器。年旧失修，残破不堪。为了便于长期维护，使用`TypeScript`进行了重构。
+# Bilibili-Old Player
+[B站](//www.bilibili.com) 在 2019 年 12 月 09 日弃用的经典播放器。
+年旧失修，残破不堪。为了便于长期维护，使用 `TypeScript` 进行了重构。
 
 </div>
 

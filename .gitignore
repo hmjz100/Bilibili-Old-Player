@@ -1,2 +1,4 @@
 node_modules
 dist
+namespace/metadata.ts
+as3-danmaku/host/worker.js

@@ -1,4 +1,4 @@
-import STATE from '../state';
+﻿import STATE from '../state';
 import Controller from '../controller';
 import Player from '../../player';
 import svg from '../svg';
@@ -244,6 +244,7 @@ class SubtitleButton {
                 if (this.subtitleList && this.subtitleList.length) {
                     items = items.concat(
                         this.subtitleList.map((item) => {
+                            if (item['lan'].startsWith('ai-')) item['lan_doc'] += '（AI）';
                             return {
                                 name: item['lan_doc'],
                                 value: item['lan'],

@@ -68,22 +68,29 @@ class ContextMenu {
         {
             type: 'function',
             icon: '',
-            text: `更新历史 ${METADATA.version}-${METADATA.revision}`,
+            text: `Bilibili-Old Player ${METADATA.version}-${METADATA.revision}`,
+            link: '//github.com/hmjz100/Bilibili-Old-Player',
+            click: () => { },
+        },
+        {
+            type: 'function',
+            icon: '',
+            text: `基于 哔哩哔哩播放器 0.11.21-8c739d8a 重构`, // 2019-10-30T07:57:34.584Z
             link: '//www.bilibili.com/blackboard/webplayer_history.html#html5',
             click: () => { },
-            // }, {
-            //     type: 'function',
-            //     text: '播放器日志信息',
-            //     click: () => {
-            //         this.player.eventLog.show();
-            //     }
-            // }, {
-            //     type: 'function',
-            //     text: '导出播放器日志',
-            //     click: () => {
-            //         this.player.eventLog.download();
-            //     }
-        },
+        }
+        // {
+        //     type: 'function',
+        //     text: '播放器日志信息',
+        //     click: () => {
+        //         this.player.eventLog.show();
+        //     }
+        // }, {
+        //     type: 'function',
+        //     text: '导出播放器日志',
+        //     click: () => {
+        //         this.player.eventLog.download();
+        // }
     ];
 
     constructor(player: Player, container: JQuery, config: IConfigInterface) {
