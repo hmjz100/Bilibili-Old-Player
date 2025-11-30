@@ -301,9 +301,10 @@ class VideoInfo {
 
         this.$container = $('<div>').addClass(cssPrefix('container'));
 
+        // [x]
         this.$close = $('<a href="javascript:void(0);">')
             .addClass(cssPrefix('close'))
-            .text('[x]')
+            .html(`<i class="bilibili-player-iconfont bilibili-player-iconfont-close icon-12close player-tooltips-trigger" name="close"></i>`)
             .appendTo(this.$container);
         this.$panel = $('<div>').addClass(cssPrefix('panel')).appendTo(this.$container);
 

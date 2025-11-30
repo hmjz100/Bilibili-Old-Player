@@ -1167,10 +1167,11 @@ class Danmaku {
                 itemsHTML += `<div class="${this.player.prefix}-hotkey-panel-item"><span class="${this.player.prefix}-hotkey-panel-key">${item[0]}</span><span class="${this.player.prefix}-hotkey-panel-value">${item[1]}</span></div>`;
             });
 
+            // [x]
             this.player.template.playerWrap.append(`
                 <div class="${this.player.prefix}-hotkey-panel-container active">
-                    <div class="${this.player.prefix}-hotkey-panel-close">[x]</div>
-                        <div class="${this.player.prefix}-hotkey-panel">${itemsHTML}</div>
+                    <div class="${this.player.prefix}-hotkey-panel-close"><i class="bilibili-player-iconfont bilibili-player-iconfont-close icon-12close" name="close"></i></div>
+                    <div class="${this.player.prefix}-hotkey-panel">${itemsHTML}</div>
                 </div>
             `);
             this.player.template.playerWrap.find(`.${this.player.prefix}-hotkey-panel-close`).click(() => {

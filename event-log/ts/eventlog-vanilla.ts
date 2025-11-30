@@ -52,10 +52,11 @@ export default class VanillaEventLog {
     }
     private tpl() {
         const wrap = document.createElement('div');
+        // [x]
         wrap.innerHTML = `<div class="${this.prefix}-container">
-                    <div class="${this.prefix}-panel"></div>
-                    <div class="${this.prefix}-close">[x]</div>
-                </div>`;
+            <div class="${this.prefix}-panel"></div>
+            <div class="${this.prefix}-close"><i class="bilibili-player-iconfont bilibili-player-iconfont-close icon-12close" name="close"></i></div>
+        </div>`;
 
         return wrap.childNodes[0];
     }
