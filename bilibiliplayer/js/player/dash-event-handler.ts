@@ -217,7 +217,7 @@ export class DashEventHandler {
             this.AddIndex(String(`${index}-${qn}`), mediaType);
         }
 
-        if (<Number>this.player?.currentTime() > 5 && e.mediaType === 'video') {
+        if ((this.player?.currentTime() ?? 0) > 5 && e.mediaType === 'video') {
             const host = /^http(s)?:\/\/(.*?)\//.exec(e.url);
             if (host && host[2]) {
                 if (!this.prevHost) {

@@ -6,7 +6,7 @@ export function stringLimit(str: string, limit = 14) {
     let splitLength = limit;
     for (let i = 0; i < str.length; i++) {
         const c = str.charAt(i);
-        const flag = /^[\u0020-\uooff]$/.test(c);
+        const flag = /^[\u0020-\u00ff]$/.test(c);
         if (flag) {
             // 英文
             charCount += 0.5;

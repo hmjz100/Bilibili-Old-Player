@@ -345,7 +345,7 @@ class Renderer {
             styleIn += `font-weight:${item['bold'] ? 'bold' : 'normal'};`;
         }
         if (item.hasOwnProperty('fontSize')) {
-            if (item['fontSize']! >= 12) {
+            if (typeof item['fontSize'] === 'number' && item['fontSize']! >= 12) {
                 styleIn += `font-size:${item['fontSize']}px;`;
             } else {
                 styleIn += 'font-size:12px;';
