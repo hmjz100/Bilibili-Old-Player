@@ -20,9 +20,7 @@ const plugin = {
     },
 };
 esbuild.build({
-    entryPoints: [
-        'as3-danmaku/worker/Worker.ts'
-    ],
+    entryPoints: ["./worker/Worker.ts"],
     target: "chrome76",
     bundle: true,
     format: 'iife',
@@ -34,5 +32,5 @@ esbuild.build({
     ],
     keepNames: true,
     write: false,
-    outfile: 'as3-danmaku/host/worker.js'
+    outfile: './host/worker.js'
 })

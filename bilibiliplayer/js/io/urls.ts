@@ -51,7 +51,7 @@ export default class URLS {
      * @kind Player
      */
     // static readonly PLAYER = URLS.P_AUTO + URLS.D_API + '/x/player.so'; // player接口
-    static readonly PLAYER = URLS.P_AUTO + URLS.D_API + '/x/player/v2'; // 新player接口
+    static readonly PLAYER = URLS.P_AUTO + URLS.D_API + '/x/player/wbi/v2'; // 新player接口
     // http://bpre-api.bilibili.co/project/1941/interface/api/281403
     static readonly onlineNum = URLS.P_AUTO + URLS.D_API + '/x/player/online/total'; // 全站的在线人数
     static readonly X_PLAYER_VIDEOSHOT = URLS.P_AUTO + URLS.D_API + '/x/player/videoshot'; // 帧预览
