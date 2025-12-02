@@ -104,7 +104,7 @@ class Quality {
                                     (Number(status.vip_type) === 0 || Number(status.vip_status) !== 1) &&
                                     !this.isUpWatch())
                             ) {
-                                hiddenQuality.push(i); //轻量播放器移除播放器中大会员相关逻辑
+                                hiddenQuality.push(i); // 轻量播放器移除播放器中大会员相关逻辑
                             }
                             flag = '';
                         } else {

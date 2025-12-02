@@ -4,7 +4,7 @@
   "author": "Hmjz100",
   "scripts": {
     "tsc": "tsc -p ./tsconfig.json  --noEmit",
-    "build": "node .vscode/esbuild.mjs",
+    "build": "npm update && node .vscode/esbuild.mjs",
     "build-as3-danmaku": "node ./as3-danmaku/build.mjs"
   },
   "devDependencies": {

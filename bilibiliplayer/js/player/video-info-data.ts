@@ -9,13 +9,13 @@ const generateVideoInfoItems = (playerType: PlayerType) => {
                 {
                     name: 'mimeType',
                     type: 'text',
-                    title: 'Mime 类型',
+                    title: '扩展类型',
                     data: '',
                 },
                 {
                     name: 'playerType',
                     type: 'text',
-                    title: 'Player 类型',
+                    title: '播放器类型',
                     data: '',
                 },
                 {
@@ -56,13 +56,13 @@ const generateVideoInfoItems = (playerType: PlayerType) => {
                 {
                     name: 'mimeType',
                     type: 'text',
-                    title: 'Mime 类型',
+                    title: '扩展类型',
                     data: '',
                 },
                 {
                     name: 'playerType',
                     type: 'text',
-                    title: 'Player 类型',
+                    title: '播放器类型',
                     data: '',
                 },
                 {
@@ -98,7 +98,7 @@ const generateVideoInfoItems = (playerType: PlayerType) => {
                 {
                     name: 'segments',
                     type: 'text',
-                    title: '分段',
+                    title: '分片',
                     data: '',
                 },
                 {
@@ -162,13 +162,13 @@ const generateVideoInfoItems = (playerType: PlayerType) => {
             {
                 name: 'mimeType',
                 type: 'text',
-                title: 'Mime 类型',
+                title: '扩展类型',
                 data: '',
             },
             {
                 name: 'playerType',
                 type: 'text',
-                title: 'Player 类型',
+                title: '播放器类型',
                 data: '',
             },
             {
@@ -210,7 +210,7 @@ const generateVideoInfoItems = (playerType: PlayerType) => {
             {
                 name: 'segments',
                 type: 'text',
-                title: '分段',
+                title: '分片',
                 data: '',
             },
             {
@@ -416,8 +416,9 @@ const updateVideoInfoData = (
         const videoDataRate: any = mediaInfo['videoDataRate'];
         const audioDataRate: any = mediaInfo['audioDataRate'];
 
-        // remove streamType、streamHost、droppedFrames
-        data.splice(3, 3);
+        // 根据 name 移除 items
+        const namesToRemove = new Set(['streamHost', 'droppedFrames']);
+        data = data.filter(item => !namesToRemove.has(item.name));
 
         // videoStreamHost += `, ${Math.floor(videoDataRate / 1024)} Kbps`;
         // audioStreamHost += `, ${Math.floor(audioDataRate / 1024)} Kbps`;

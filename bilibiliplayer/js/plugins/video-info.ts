@@ -199,7 +199,7 @@ class VideoInfo {
                         info.name +
                         '"><span class="info-title">' +
                         info.title +
-                        ':</span><span class="info-data info-log show">[Show]</span> <span class="info-data info-copy">[Copy]</span> <span class="info-data info-download">[Download]</span></div>';
+                        ':</span><span class="info-data info-log show">[显示]</span> <span class="info-data info-copy">[复制]</span> <span class="info-data info-download">[保存]</span></div>';
                     break;
                 default:
                     break;
@@ -357,7 +357,7 @@ class VideoInfo {
             $dom = this.$container.find('.info-data.info-log');
         }
         if ($dom.hasClass('show')) {
-            $dom.text('[Hide]');
+            $dom.text('[隐藏]');
             $dom.removeClass('show').addClass('hide');
             this.player.eventLog.show();
         }
@@ -369,7 +369,7 @@ class VideoInfo {
             $dom = this.$container.find('.info-data.info-log');
         }
         if ($dom.hasClass('hide')) {
-            $dom.text('[Show]');
+            $dom.text('[显示]');
             $dom.removeClass('hide').addClass('show');
             this.player.eventLog.hide();
         }

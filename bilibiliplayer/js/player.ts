@@ -2919,7 +2919,7 @@ class Player {
     }
 
     isSvipQuality(quality: number): boolean {
-        return quality === 112 || quality === 116 || quality === 120 || quality === 125 || quality === 126 || quality === 127;
+        return quality === 100 || quality === 112 || quality === 116 || quality === 120 || quality === 125 || quality === 126 || quality === 127;
     }
     // getDynamicBuffer() {
     //     if (this.isSvipQuality(this.videoRealQuality)) {
