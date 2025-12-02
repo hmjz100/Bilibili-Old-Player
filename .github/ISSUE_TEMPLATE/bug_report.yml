@@ -1,8 +1,18 @@
-name: Bug反馈
+name: Bug 反馈
 description: 反馈发现的问题
 labels: bug
 title: "[Bug]: "
 body:
+  - type: dropdown
+    id: script-type
+    attributes:
+      label: 问题是发生在那种形态的？
+      options:
+        - 浏览器扩展
+        - 用户脚本
+    validations:
+      required: true
+
   - type: textarea
     id: what-happened
     attributes:
@@ -27,7 +37,7 @@ body:
       label: 参考数据
       description: 帮助诊断的截图或者其他资料
       placeholder: |
-        网页截图、控制台(f12)截图或DevTools快照
+        网页截图、控制台(F12)截图或 DevTools 快照
         **截图可以直接粘贴哦~**
 
   - type: dropdown
@@ -53,3 +63,9 @@ body:
       label: 浏览器名称及版本
     validations:
       required: true
+
+  - type: input
+    id: script-version
+    attributes:
+      label: 版本
+      description: 播放器的具体版本

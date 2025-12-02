@@ -288,13 +288,12 @@ const updateVideoInfoData = (
             streamType = /^(https?|wss?)\:\/\/?/.exec(<string>statInfo['url'])![1];
         }
         if (statInfo['videoURL']) {
-            // streamHost = /https?:\/\/(.+?)\//.exec(statInfo['videoURL'])![1];
-            // streamType = /^(https?|wss?)\:\/\/?/.exec(statInfo['videoURL'])![1];
+            streamHost = /https?:\/\/(.+?)\//.exec(statInfo['videoURL'])![1];
+            streamType = /^(https?|wss?)\:\/\/?/.exec(statInfo['videoURL'])![1];
             videoStreamHost = /https?:\/\/(.+?)\//.exec(statInfo['videoURL'])![1];
         }
         if (statInfo['audioURL']) {
             audioStreamHost = /https?:\/\/(.+?)\//.exec(statInfo['audioURL'])![1];
-            // streamType = /^(https?|wss?)\:\/\/?/.exec(statInfo['videoURL'])![1];
         }
     } catch (e) {
         streamHost = '';
@@ -418,12 +417,11 @@ const updateVideoInfoData = (
         const audioDataRate: any = mediaInfo['audioDataRate'];
 
         // remove streamType、streamHost、droppedFrames
-        data.splice(3, 3);
+        // data.splice(3, 3);
 
         // videoStreamHost += `, ${Math.floor(videoDataRate / 1024)} Kbps`;
         // audioStreamHost += `, ${Math.floor(audioDataRate / 1024)} Kbps`;
-        const segments =
-            (statInfo['audioCurrentSegmentIndex'] || 0 + 1) + ' / ' + (statInfo['audioTotalSegmentCount'] || 0);
+        const segments = (statInfo['audioCurrentSegmentIndex'] || 0 + 1) + ' / ' + (statInfo['audioTotalSegmentCount'] || 0);
 
         // droppedFrames = segments + ', ' + droppedFrames;
 

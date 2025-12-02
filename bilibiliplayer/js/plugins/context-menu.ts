@@ -90,6 +90,7 @@ class ContextMenu {
         //     text: '导出播放器日志',
         //     click: () => {
         //         this.player.eventLog.download();
+        //     }
         // }
     ];
 

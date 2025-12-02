@@ -1151,18 +1151,18 @@ class Danmaku {
             let itemsHTML = '';
             [
                 ['space', '播放/暂停'],
-                ['→', '步进5s'],
-                ['←', '步退5s'],
-                ['↑', '音量增加10%'],
-                ['↓', '音量降低10%'],
+                ['→', '步进 5s'],
+                ['←', '步退 5s'],
+                ['↑', '音量增加 10%'],
+                ['↓', '音量降低 10%'],
                 ['esc', '退出全屏'],
-                ['媒体键 play/pause', '播放/暂停'],
-                ['f', '全屏/退出全屏'],
+                ['媒体键 play/pause', '播放 / 暂停'],
+                ['f', '全屏 / 退出全屏'],
                 ['[', '多P 上一个'],
                 [']', '多P 下一个'],
                 ['enter', '发弹幕'],
-                ['D', '开启/关闭弹幕'],
-                ['M', '开启/关闭静音']
+                ['D', '开启 / 关闭弹幕'],
+                ['M', '开启 / 关闭静音']
             ].forEach((item) => {
                 itemsHTML += `<div class="${this.player.prefix}-hotkey-panel-item"><span class="${this.player.prefix}-hotkey-panel-key">${item[0]}</span><span class="${this.player.prefix}-hotkey-panel-value">${item[1]}</span></div>`;
             });

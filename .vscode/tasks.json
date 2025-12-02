@@ -6,7 +6,7 @@
 			"script": "tsc",
 			"problemMatcher": [],
 			"label": "语义检查",
-			"detail": "运行typescript语义检查"
+			"detail": "运行 TypeScript 语义检查"
 		},
 		{
 			"type": "npm",
@@ -17,7 +17,7 @@
 			},
 			"problemMatcher": [],
 			"label": "编译打包",
-			"detail": "释放发行版到dist目录",
+			"detail": "释放发行版到 dist 目录",
 			"dependsOn": [
 				"As3-danmaku"
 			]

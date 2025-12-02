@@ -2,6 +2,9 @@
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'bilibiliplayer/**'
 
 jobs:
   build:
