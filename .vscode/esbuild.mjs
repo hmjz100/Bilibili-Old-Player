@@ -33,9 +33,9 @@ esbuild.build({
     // metafile: true, // 打印报表
     // charset: 'utf8', // 文件编码
     define: {
-		'__BUILD_VERSION__': JSON.stringify(version),
-		'__BUILD_REVISION__': JSON.stringify(revision),
-		'__BUILD_TIME__': JSON.stringify(new Date().toISOString()),
+		_BUILD_VERSION_: version,
+		_BUILD_REVISION_: revision,
+		_BUILD_TIME_: new Date().toISOString(),
 	},
     loader: { // 文件对应的解析方式
         '.html': 'text',

@@ -1,9 +1,9 @@
-declare const __BUILD_VERSION__: string;
-declare const __BUILD_REVISION__: string;
-declare const __BUILD_TIME__: string;
+declare const _BUILD_VERSION_: string;
+declare const _BUILD_REVISION_: string;
+declare const _BUILD_TIME_: string;
 
 export const METADATA = {
-	version: __BUILD_VERSION__,
-	revision: __BUILD_REVISION__,
-	lastCompiled: __BUILD_TIME__
+	version: _BUILD_VERSION_,
+	revision: _BUILD_REVISION_,
+	lastCompiled: _BUILD_TIME_
 } as const;
