@@ -1,5 +1,5 @@
+dist
 node_modules
-# dist
-package-lock.json
 pnpm-lock.yaml
+package-lock.json
 as3-danmaku/host/worker.js
