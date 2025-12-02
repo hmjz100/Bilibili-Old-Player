@@ -417,7 +417,7 @@ const updateVideoInfoData = (
         const audioDataRate: any = mediaInfo['audioDataRate'];
 
         // remove streamType、streamHost、droppedFrames
-        // data.splice(3, 3);
+        data.splice(3, 3);
 
         // videoStreamHost += `, ${Math.floor(videoDataRate / 1024)} Kbps`;
         // audioStreamHost += `, ${Math.floor(audioDataRate / 1024)} Kbps`;
