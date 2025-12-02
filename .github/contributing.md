@@ -5,10 +5,11 @@
 - [Google Chrome](https://www.google.com/chrome/)
 
 ### 开发流程
-1. `git clone` 项目到本地
-2. `pnpm install` 更新依赖
-3. `pnpm run tsc` 进行语义检查
-4. `pnpm run build` 打包生成到dist目录
+- `git clone` 项目到本地
+- `npm update` 更新依赖
+- 开发吧！
+- `npm run tsc` 进行语义检查
+- `npm run build` 打包生成到 dist 目录
 
 ### 源码说明
 源码主要基于 [`video.min.js`](//static.hdslb.com/js/video.min.js)、[`bilibiliPlayer.min.js`](//static.hdslb.com/player/js/bilibiliPlayer.min.js) 等原文件进行重构  

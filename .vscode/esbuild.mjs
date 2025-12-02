@@ -1,14 +1,24 @@
+import pkg from '../package.json' with { type: 'json' };
 import esbuild from 'esbuild';
 import fs from 'fs-extra';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url'; 
-import { dirname, resolve } from 'path';
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
 
-const pkg = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf-8'));
-// console.log(JSON.stringify(pkg));
+/**
+ * 获取项目的 `commit` 哈希值
+ * @returns {Promise<string>} `commit` 哈希值
+ */
+function getHash() {
+    return new Promise((resolve, reject) => {
+        exec(`git rev-parse HEAD`, (e, d) => {
+            e && reject(e);
+            d && resolve(d.match(/[a-f0-9]{40}/)[0]);
+        })
+    })
+}
+
+const hash = await getHash();
 const version = pkg.version;
-const revision = execSync('git rev-parse --short HEAD').toString().trim();
+const revision = hash.slice(0, 7);
 
 esbuild.build({
     entryPoints: ['src/video.ts'], // 入口脚本
