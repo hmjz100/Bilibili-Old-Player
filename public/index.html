@@ -114,10 +114,34 @@
 		}
 
 		loadJS(url, function () {
-			// 如果没有查询参数，则默认调用示例视频
 			var search = location.search.slice(1);
+			// 如果没有查询参数，则注入模拟数据以实现本地预览播放，绕过 Bilibili API 的跨域限制
 			if (!search) {
-				search = 'url=' + encodeURIComponent('https://artplayer.org/assets/sample/video.mp4?q=720');
+				// 1. 模拟 CID 和 AID，防止代码逻辑出现 NaN 或触发元数据查询
+				search = 'aid=1&cid=1&'; 
+				// 2. 注入 __playinfo__，这是 B站播放器内核读取视频流地址的最高优先级方式
+				window.__playinfo__ = {
+					"code": 0,
+					"data": {
+						"quality": 80,
+						"format": "mp4",
+						"timelength": 0,
+						"accept_quality": [80],
+						"accept_description": ["高清 1080P"],
+						"accept_format": "mp4",
+						"durl": [{
+							"order": 1,
+							"length": 0,
+							"size": 0,
+							"url": "https://artplayer.org/assets/sample/video.mp4?q=720"
+						}],
+						"support_formats": [{
+							"quality": 80,
+							"format": "mp4",
+							"new_description": "1080P"
+						}]
+					}
+				};
 			}
 			window.EmbedPlayer && window.EmbedPlayer('player', '', search, '', false, '', true);
 
