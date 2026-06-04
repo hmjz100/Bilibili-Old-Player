@@ -3,11 +3,6 @@ name: 部署到 Github Pages
 on:
   workflow_dispatch:
   push:
-    branches:
-      - master
-    paths:
-      - "bilibiliplayer/**"
-      - "public/index.html"
 
 jobs:
   deploy:
