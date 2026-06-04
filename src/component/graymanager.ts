@@ -1008,7 +1008,7 @@ class GrayManagerClass {
         const params: any = {};
         this.update_params(params, true);
         const bofqi = document.querySelector('#bilibili-player') || document.querySelector('#bofqi');
-        if (window.location.host && window.location.host.indexOf('.bilibili.co') === -1) {
+        /*if (window.location.host && window.location.host.indexOf('.bilibili.co') === -1) {
             // default inset
             // if(!this.hashManage.get('iframe') || this.hashManage.get('iframe') != '0') { // default iframe
             // iframe html5 player
@@ -1034,104 +1034,104 @@ class GrayManagerClass {
             if (params.attribute) {
                 that.checkInteractive(false, Number(params.attribute));
             }
-        } else {
-            // normal html5 player
-            params.p = window.pageno || this.hashManage.get('page') || this.GetUrlValue('p') || 1;
-            if (params.urlparam) {
-                params.extra_params = window.decodeURIComponent(params.urlparam);
-            }
-            bofqi!.innerHTML = '<div id="player_placeholder" class="player"></div>';
+        } else {*/
+        // normal html5 player
+        params.p = window.pageno || this.hashManage.get('page') || this.GetUrlValue('p') || 1;
+        if (params.urlparam) {
+            params.extra_params = window.decodeURIComponent(params.urlparam);
+        }
+        bofqi!.innerHTML = '<div id="player_placeholder" class="player"></div>';
 
-            const result = {} as IPromiseResult;
-            const playerSourceDefer = new Promise((resolve, reject) => {
-                result.resolve = resolve;
-                result.reject = reject;
-            });
-            playerSourceDefer.catch(() => { });
-            const loadBilibiliPlayer = (corePlayer: any, done: boolean) => {
-                this.h5Params = {
-                    done,
-                    params,
-                    corePlayer,
-                };
-                playerSourceDefer
-                    .then(() => {
-                        this.destoryH5Player();
-                        if (done) {
-                            window.player = new window.BilibiliPlayer(params, corePlayer);
-                        } else {
-                            corePlayer && corePlayer.destroy();
-                            window.player = new window.BilibiliPlayer(params);
-                        }
-                        // compatible
-                        that.gray_html5_compatible(done);
-                    })
-                    .catch(() => {
-                        if (this.isLoadingPlayerjs) {
-                            return;
-                        }
-                        const playerStyle = document.querySelector('style[data-injector="bilibili-player"]');
-                        playerStyle && playerStyle.parentNode && playerStyle.parentNode.removeChild(playerStyle);
-
-                        this.isLoadingPlayerjs = import(
-                            /* webpackChunkName: "player", webpackPreload: true */ '@jsc/bilibiliplayer/bilibiliPlayer'
-                        ).then((s) => {
-                            window.BilibiliPlayer = s.BilibiliPlayer;
-                            this.newH5Player();
-                            this.h5Params = null;
-                            this.isLoadingPlayerjs = false;
-                        });
-                    });
+        const result = {} as IPromiseResult;
+        const playerSourceDefer = new Promise((resolve, reject) => {
+            result.resolve = resolve;
+            result.reject = reject;
+        });
+        playerSourceDefer.catch(() => { });
+        const loadBilibiliPlayer = (corePlayer: any, done: boolean) => {
+            this.h5Params = {
+                done,
+                params,
+                corePlayer,
             };
-            const playerElement = bofqi!.querySelector('.player');
-            const biliPlayerElement = bofqi!.querySelector('#bilibiliPlayer');
-            if (playerElement && biliPlayerElement) {
-                biliPlayerElement.setAttribute('data-prerender', 'true');
-            } else {
-                bofqi!.innerHTML =
-                    '<div class="player"><div id="bilibiliPlayer"></div></div><div id="player_placeholder"></div>';
-            }
-            if (window.BilibiliPlayer) {
-                window.player = new window.BilibiliPlayer(params);
-                // compatible
-                this.gray_html5_compatible();
-            } else {
-                const s = document.getElementById('playerSource');
-                if (s) {
-                    s.onload = () => {
-                        result.resolve && result.resolve();
-                    };
-                    s.onerror = () => {
-                        result.reject && result.reject();
-                    };
-                } else {
+            playerSourceDefer
+                .then(() => {
+                    this.destoryH5Player();
+                    if (done) {
+                        window.player = new window.BilibiliPlayer(params, corePlayer);
+                    } else {
+                        corePlayer && corePlayer.destroy();
+                        window.player = new window.BilibiliPlayer(params);
+                    }
+                    // compatible
+                    that.gray_html5_compatible(done);
+                })
+                .catch(() => {
+                    if (this.isLoadingPlayerjs) {
+                        return;
+                    }
+                    const playerStyle = document.querySelector('style[data-injector="bilibili-player"]');
+                    playerStyle && playerStyle.parentNode && playerStyle.parentNode.removeChild(playerStyle);
+
+                    this.isLoadingPlayerjs = import(
+                            /* webpackChunkName: "player", webpackPreload: true */ '@jsc/bilibiliplayer/bilibiliPlayer'
+                    ).then((s) => {
+                        window.BilibiliPlayer = s.BilibiliPlayer;
+                        this.newH5Player();
+                        this.h5Params = null;
+                        this.isLoadingPlayerjs = false;
+                    });
+                });
+        };
+        const playerElement = bofqi!.querySelector('.player');
+        const biliPlayerElement = bofqi!.querySelector('#bilibiliPlayer');
+        if (playerElement && biliPlayerElement) {
+            biliPlayerElement.setAttribute('data-prerender', 'true');
+        } else {
+            bofqi!.innerHTML =
+                '<div class="player"><div id="bilibiliPlayer"></div></div><div id="player_placeholder"></div>';
+        }
+        if (window.BilibiliPlayer) {
+            window.player = new window.BilibiliPlayer(params);
+            // compatible
+            this.gray_html5_compatible();
+        } else {
+            const s = document.getElementById('playerSource');
+            if (s) {
+                s.onload = () => {
+                    result.resolve && result.resolve();
+                };
+                s.onerror = () => {
                     result.reject && result.reject();
-                }
-                if (+params.pre_ad) {
-                    loadBilibiliPlayer(null, false);
-                } else if (+params.season_type) {
-                    loadBilibiliPlayer(undefined, false);
-                    // 暂时禁用core-plaryer
-                    // pgc
-                    // this.corePlayer = new CorePlayer(params);
-                    // this.corePlayer.loadedmetadata
-                    //     .then((corePlayer: any) => loadBilibiliPlayer(corePlayer, true))
-                    //     .catch((corePlayer: any) => loadBilibiliPlayer(corePlayer, false));
-                } else if (params.playlistId) {
-                    loadBilibiliPlayer(null, false);
-                } else {
-                    loadBilibiliPlayer(undefined, false);
-                    // 暂时禁用core-plaryer
-                    // this.corePlayer = new CorePlayer(params);
-                    // this.corePlayer.loadedmetadata
-                    //     .then((corePlayer: any) => loadBilibiliPlayer(corePlayer, true))
-                    //     .catch((corePlayer: any) => loadBilibiliPlayer(corePlayer, false));
-                }
+                };
+            } else {
+                result.reject && result.reject();
             }
-            if (params.attribute) {
-                that.checkInteractive(false, Number(params.attribute));
+            if (+params.pre_ad) {
+                loadBilibiliPlayer(null, false);
+            } else if (+params.season_type) {
+                loadBilibiliPlayer(undefined, false);
+                // 暂时禁用core-plaryer
+                // pgc
+                // this.corePlayer = new CorePlayer(params);
+                // this.corePlayer.loadedmetadata
+                //     .then((corePlayer: any) => loadBilibiliPlayer(corePlayer, true))
+                //     .catch((corePlayer: any) => loadBilibiliPlayer(corePlayer, false));
+            } else if (params.playlistId) {
+                loadBilibiliPlayer(null, false);
+            } else {
+                loadBilibiliPlayer(undefined, false);
+                // 暂时禁用core-plaryer
+                // this.corePlayer = new CorePlayer(params);
+                // this.corePlayer.loadedmetadata
+                //     .then((corePlayer: any) => loadBilibiliPlayer(corePlayer, true))
+                //     .catch((corePlayer: any) => loadBilibiliPlayer(corePlayer, false));
             }
         }
+        if (params.attribute) {
+            that.checkInteractive(false, Number(params.attribute));
+        }
+        // }
     }
 
     newH5Player() {
