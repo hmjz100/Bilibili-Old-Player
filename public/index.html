@@ -114,12 +114,17 @@
 		}
 
 		loadJS(url, function () {
+			// 必须设置 window.cid，否则播放器会尝试调用 API 获取播放链接
+			window.cid = 123456;
+			window.aid = 123456;
+			
+			// 设置视频播放信息
 			window['__playinfo__'] = {
 				"code": 0,
 				"data": {
 					"quality": 80,
 					"format": "mp4",
-					"timelength": 15000,  // 设置一个合理的时长（15秒），0可能导致问题
+					"timelength": 15000,
 					"accept_quality": [80],
 					"accept_description": ["高清 1080P"],
 					"accept_format": "mp4",
@@ -136,17 +141,16 @@
 					}]
 				}
 			};
-
+			
 			// 调用 EmbedPlayer 初始化播放器
-			// 参数: type, player, playerParams, playerType, upgrade, callbackFn, isIframe
 			window.EmbedPlayer && window.EmbedPlayer(
-				'player',        // type: 播放器类型标识
-				null,            // player: SWF路径（HTML5模式不需要）
-				null,            // playerParams: 参数字符串（通过 __playinfo__ 传入视频信息）
-				'html5',         // playerType: 指定使用 HTML5 播放器
-				false,           // upgrade: 是否使用升级版本
-				null,            // callbackFn: 回调函数
-				true             // isIframe: 是否在 iframe 中运行
+				'player',
+				null,
+				'cid=123456&aid=123456',  // 传入 cid 和 aid 参数
+				'html5',
+				false,
+				null,
+				true
 			);
 
 			// 临时容器方案
