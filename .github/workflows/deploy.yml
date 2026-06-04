@@ -1,14 +1,17 @@
-﻿name: 构建播放器
+name: 部署到 Github Pages
 
 on:
   workflow_dispatch:
   push:
+    branches:
+      - master
     paths:
       - "bilibiliplayer/**"
+      - "public/index.html"
 
 jobs:
-  build:
-    name: Build Player
+  deploy:
+    name: Build and Deploy
     runs-on: ubuntu-latest
     steps:
       - name: 检查仓库
@@ -26,9 +29,15 @@ jobs:
       - name: Node - 构建
         run: npm run build
 
-      - name: 上传文件
-        uses: actions/upload-artifact@v4
+      - name: 准备部署目录
+        run: |
+          mkdir -p public
+          cp -r dist public/
+
+      - name: 部署到 Github Pages
+        uses: crazy-max/ghaction-github-pages@v2
         with:
-          name: Bilibili-Old-Player
-          path: dist/**/*
-          retention-days: 30
+          target_branch: gh-pages
+          build_dir: public
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
