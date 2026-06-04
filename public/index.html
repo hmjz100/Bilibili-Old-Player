@@ -114,34 +114,40 @@
 		}
 
 		loadJS(url, function () {
-			var search = location.search.slice(1); // 获取原始查询参数
-			// 如果没有查询参数，则注入模拟数据以实现本地预览播放，绕过 Bilibili API 的跨域限制
-			if (!search) {
-				window.__playinfo__ = {
-					"code": 0,
-					"data": {
+			window['__playinfo__'] = {
+				"code": 0,
+				"data": {
+					"quality": 80,
+					"format": "mp4",
+					"timelength": 15000,  // 设置一个合理的时长（15秒），0可能导致问题
+					"accept_quality": [80],
+					"accept_description": ["高清 1080P"],
+					"accept_format": "mp4",
+					"durl": [{
+						"order": 1,
+						"length": 15000,
+						"size": 0,
+						"url": "https://artplayer.org/assets/sample/video.mp4"
+					}],
+					"support_formats": [{
 						"quality": 80,
 						"format": "mp4",
-						"timelength": 0,
-						"accept_quality": [80],
-						"accept_description": ["高清 1080P"],
-						"accept_format": "mp4",
-						"durl": [{
-							"order": 1,
-							"length": 0,
-							"size": 0,
-							"url": "https://artplayer.org/assets/sample/video.mp4"
-						}],
-						"support_formats": [{
-							"quality": 80,
-							"format": "mp4",
-							"new_description": "1080P"
-						}]
-					}
-				};
-				search = ''; // 清空 search，确保 EmbedPlayer 不会收到 aid/cid 参数
-			}
-			window.EmbedPlayer && window.EmbedPlayer('player', '', search, '', false, '', true);
+						"new_description": "1080P"
+					}]
+				}
+			};
+
+			// 调用 EmbedPlayer 初始化播放器
+			// 参数: type, player, playerParams, playerType, upgrade, callbackFn, isIframe
+			window.EmbedPlayer && window.EmbedPlayer(
+				'player',        // type: 播放器类型标识
+				null,            // player: SWF路径（HTML5模式不需要）
+				null,            // playerParams: 参数字符串（通过 __playinfo__ 传入视频信息）
+				'html5',         // playerType: 指定使用 HTML5 播放器
+				false,           // upgrade: 是否使用升级版本
+				null,            // callbackFn: 回调函数
+				true             // isIframe: 是否在 iframe 中运行
+			);
 
 			// 临时容器方案
 			try {
