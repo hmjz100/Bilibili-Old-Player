@@ -27,7 +27,7 @@ jobs:
       - name: 准备部署目录
         run: |
           mkdir -p public
-          cp -r dist public/
+          cp -r dist/* public/
 
       - name: 部署到 Github Pages
         uses: crazy-max/ghaction-github-pages@v2

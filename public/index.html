@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
 	<title>哔哩哔哩旧播放器</title>
 	<script src="https://unpkg.com/jquery@3.6.0/dist/jquery.min.js"></script>
-	<link rel="stylesheet" href="./dist/video.css" />
+	<link rel="stylesheet" href="./video.css" />
 	<style>
 		html,
 		body {
@@ -91,7 +91,7 @@
 	</div>
 
 	<script type="text/javascript">
-		var url = './dist/video.js?bver=100' + Math.ceil(Date.now() / 300000);
+		var url = './video.js?bver=100' + Math.ceil(Date.now() / 300000);
 		function loadJS(url, callback) {
 			var script = document.createElement('script'),
 				fn = callback || function () { };
@@ -114,44 +114,12 @@
 		}
 
 		loadJS(url, function () {
-			// 必须设置 window.cid，否则播放器会尝试调用 API 获取播放链接
-			window.cid = 123456;
-			window.aid = 123456;
-			
-			// 设置视频播放信息
-			window['__playinfo__'] = {
-				"code": 0,
-				"data": {
-					"quality": 80,
-					"format": "mp4",
-					"timelength": 15000,
-					"accept_quality": [80],
-					"accept_description": ["高清 1080P"],
-					"accept_format": "mp4",
-					"durl": [{
-						"order": 1,
-						"length": 15000,
-						"size": 0,
-						"url": "https://artplayer.org/assets/sample/video.mp4"
-					}],
-					"support_formats": [{
-						"quality": 80,
-						"format": "mp4",
-						"new_description": "1080P"
-					}]
-				}
-			};
-			
-			// 调用 EmbedPlayer 初始化播放器
-			window.EmbedPlayer && window.EmbedPlayer(
-				'player',
-				null,
-				'cid=123456&aid=123456',  // 传入 cid 和 aid 参数
-				'html5',
-				false,
-				null,
-				true
-			);
+			// 如果没有查询参数，则默认调用示例视频
+			var search = location.search.slice(1);
+			if (!search) {
+				search = 'url=' + encodeURIComponent('https://artplayer.org/assets/sample/video.mp4');
+			}
+			window.EmbedPlayer && window.EmbedPlayer('player', '', search, '', false, '', true);
 
 			// 临时容器方案
 			try {

@@ -1,5 +1,6 @@
 dist
 node_modules
+public/video*
 pnpm-lock.yaml
 package-lock.json
 as3-danmaku/host/worker.js
