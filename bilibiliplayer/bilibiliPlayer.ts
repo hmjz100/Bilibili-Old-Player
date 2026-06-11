@@ -264,6 +264,9 @@ export class BilibiliPlayer {
             },
             changeNaiveVideo(file: File) {
                 return player.reloadMedia.changeNaiveVideo(file);
+            },
+            loadCustomUrl(url: string) {
+                return player.reloadMedia.loadCustomUrl(url);
             }
         });
     }

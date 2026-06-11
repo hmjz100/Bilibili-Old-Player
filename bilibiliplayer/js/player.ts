@@ -311,7 +311,12 @@ class Player {
         this.dashEventHandler = new DashEventHandler(this);
         this.reloadMedia = new ReloadMedia(this);
         const start = () => {
-            if (this.corePreload) {
+            // 如果有自定义 URL，直接加载自定义视频
+            if (this.config.url) {
+                this._beforeInit();
+                this._init();
+                this.reloadMedia.loadCustomUrl(this.config.url);
+            } else if (this.corePreload) {
                 this.video = this.corePreload['typedInfo']['video'];
                 this.cdnTimeStart = this.corePreload['playurlStartTime'];
                 this._beforeInit();
@@ -2144,6 +2149,14 @@ class Player {
     }
 
     getVideoData(defaultQuality?: any, vtype?: any, reload?: boolean) {
+        // 如果有自定义 URL，直接加载自定义视频，不请求在线 API
+        if (this.config.url) {
+            this._beforeInit();
+            this._init();
+            this.reloadMedia.loadCustomUrl(this.config.url);
+            return;
+        }
+        
         if (this.playlistLimit) {
             setTimeout(() => {
                 this.loadingpanel.complete(2, true);

@@ -81,6 +81,42 @@
 		#act-preview-alert-mask {
 			display: none !important;
 		}
+
+		#url-input-container {
+			position: absolute;
+			top: 10px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 10000;
+			display: flex;
+			gap: 10px;
+			background: rgba(0, 0, 0, 0.8);
+			padding: 10px;
+			border-radius: 8px;
+			align-items: center;
+		}
+
+		#url-input {
+			width: 400px;
+			padding: 8px 12px;
+			border: none;
+			border-radius: 4px;
+			font-size: 14px;
+		}
+
+		#load-btn {
+			padding: 8px 20px;
+			background: #00a1d6;
+			color: white;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+		}
+
+		#load-btn:hover {
+			background: #00b5e5;
+		}
 	</style>
 </head>
 
@@ -91,7 +127,8 @@
 	</div>
 
 	<script type="text/javascript">
-		var url = './video.js?bver=100' + Math.ceil(Date.now() / 300000);
+		var url = './video.js?t=' + Date.now();
+		var playerInstance = null;
 		function loadJS(url, callback) {
 			var script = document.createElement('script'),
 				fn = callback || function () { };
@@ -113,12 +150,47 @@
 			document.getElementsByTagName('head')[0].appendChild(script);
 		}
 
-		loadJS(url, function () {
-			// 如果没有查询参数，则默认调用示例视频
-			var search = location.search.slice(1);
-			if (!search) {
-				search = 'url=' + encodeURIComponent('https://artplayer.org/assets/sample/video.mp4');
+		function createUrlInput() {
+			var container = document.createElement('div');
+			container.id = 'url-input-container';
+
+			var input = document.createElement('input');
+			input.id = 'url-input';
+			input.type = 'text';
+			input.placeholder = '请输入视频 URL (支持本地文件路径或在线链接)';
+
+			var btn = document.createElement('button');
+			btn.id = 'load-btn';
+			btn.textContent = '加载视频';
+			btn.onclick = loadCustomVideo;
+
+			container.appendChild(input);
+			container.appendChild(btn);
+			document.body.appendChild(container);
+		}
+
+		function loadCustomVideo() {
+			var videoUrl = document.getElementById('url-input').value;
+			if (!videoUrl) {
+				alert('请输入视频 URL');
+				return;
 			}
+			if (playerInstance) {
+				try {
+					playerInstance.loadCustomUrl(videoUrl);
+				} catch (e) {
+					console.error('加载自定义视频失败:', e);
+					alert('加载视频失败: ' + e.message);
+				}
+			} else {
+				console.warn('播放器尚未初始化，无法加载自定义视频');
+			}
+		}
+
+		loadJS(url, function () {
+			createUrlInput();
+			// 只有当查询参数存在时才初始化播放器，否则先不播放
+			var search = location.search.slice(1) || '';
 			window.EmbedPlayer && window.EmbedPlayer('player', '', search, '', false, '', true);
 
 			// 临时容器方案
@@ -133,6 +205,7 @@
 							top.document.querySelectorAll('iframe').forEach(function (e) {
 								try {
 									if (e.contentWindow.player) {
+										playerInstance = e.contentWindow.player;
 										if (hasPlay) {
 											e.contentWindow.player.pause();
 										} else if (!e.contentWindow.document.querySelector('video').paused) {
@@ -159,10 +232,16 @@
 								} catch (e) { }
 							});
 							return window.parent.Html5IframeInitializedInjected();
-						}
+						};
 					}
 				}
 			} catch (e) { }
+			// 直接引用 player 变量
+			setTimeout(function () {
+				if (window.player) {
+					playerInstance = window.player;
+				}
+			}, 1000);
 		});
 	</script>
 </body>

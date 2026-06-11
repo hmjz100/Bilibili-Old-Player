@@ -14,7 +14,11 @@ async function EmbedPlayer(
 	player = '';
 	let config: any = utils.defaultSearch(playerParamsArg);
 	config.show_bv = window['show_bv'] ?? config.show_bv;
-	await getAllCid(config);
+	
+	// 如果有 url 参数，说明是自定义视频，不需要调用 getAllCid
+	if (!config.url) {
+		await getAllCid(config);
+	}
 	if (isIframe) {
 		if (NotInReferrerList()) return;
 		if (config.crossDomain) {

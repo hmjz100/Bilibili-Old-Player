@@ -595,6 +595,91 @@ export class ReloadMedia {
         this.player.reloadMedia._setVideoWrap(video, flvPlayer, false, 'flv');
     }
 
+    loadCustomUrl(url: string) {
+        if (!url) throw new Error('视频 URL 不能为空');
+        if (!this.player.initialized) {
+            this.player.loadingpanel.reset(2);
+            this.player.loadingpanel.reset(3);
+            this.player.loadingpanel.ready(2);
+        }
+
+        this.player.trigger(STATE.EVENT.VIDEO_PLAYURL_LOAD);
+        this.player.backupURLIndex = 0;
+        this.player.eventLog.log(`\r\n自定义视频：${url}\r\n`, 3);
+        this.player.errorHandler.hideErrorMsg();
+        this.player.controller.clearTimeMark();
+
+        this.player.trigger(STATE.EVENT.VIDEO_PLAYURL_LOADED);
+        this.player._setVideoQuality(0);
+        this.player.controller.quality.hide(); // 隐藏画质切换按钮
+        this.player.videoQuality = 0;
+        delete this.player.mediaDataSource;
+
+        const video = document.createElement('video');
+        this.player.pause();
+        this.player.videoReuse = false;
+        this.player.trigger(STATE.EVENT.VIDEO_METADATA_LOAD);
+        
+        // 检测文件类型
+        const lowerUrl = url.toLowerCase();
+        let isFlv = lowerUrl.endsWith('.flv');
+        
+        if (isFlv && window['flvjs']) {
+            // 使用 flvjs 播放 flv 文件
+            const config = {
+                enableWorker: false,
+                stashInitialSize: 1024 * 64,
+                accurateSeek: true,
+                seekType: 'param',
+                rangeLoadZeroStart: false,
+                lazyLoadMaxDuration: 100,
+                lazyLoadRecoverDuration: 50,
+                deferLoadAfterSourceOpen: false,
+                fixAudioTimestampGap: false,
+                reuseRedirectedURL: true,
+            };
+            
+            const mediaDataSource = {
+                duration: 0,
+                type: 'flv',
+                url: url,
+                backupURL: []
+            };
+            
+            const flvPlayer = window['flvjs']['createPlayer'](mediaDataSource, <any>config);
+            this.player.flvEventHandler.registerFlvPlayerEvents(flvPlayer);
+            flvPlayer['currentTime'] = 0;
+            flvPlayer['attachMediaElement'](video);
+            flvPlayer['load']();
+
+            if (flvPlayer['type'] === 'FlvPlayer') {
+                this.player.state.video_type = 1;
+            } else {
+                this.player.state.video_type = 2;
+            }
+            if (!this.player.initialized) {
+                this.player.loadingpanel.ready(3);
+            }
+            $(video).appendTo(this.player.template.videoWrp).addClass('seamless');
+            this.player.reloadMedia._setVideoWrap(video, flvPlayer, false, 'flv');
+        } else {
+            // 直接使用原生 video 元素播放 mp4 等格式
+            video.src = url;
+            video.controls = true;
+            video.volume = this.player.videoSettings['video_status']?.volume ?? 0.67;
+            
+            if (!this.player.initialized) {
+                this.player.loadingpanel.ready(3);
+            }
+            $(video).appendTo(this.player.template.videoWrp).addClass('seamless');
+            // 直接设置 video 元素并触发必要的事件
+            this.player.video = video;
+            this.player._videoEventListener(video);
+            this.player.trigger(STATE.EVENT.VIDEO_METADATA_LOADED);
+            this.player.initialized = true;
+        }
+    }
+
     callNextPart(options: any, defaultCallback: Function | null, immediately?: boolean) {
         const that = this;
         this.player.initPartmanager().load(
@@ -703,12 +788,14 @@ export class ReloadMedia {
             $(this.player.video).remove();
             $(video).removeClass('seamless');
         }
-        this.player.settingPanel.panoramicManager &&
+        this.player.settingPanel && this.player.settingPanel.panoramicManager &&
             this.player.settingPanel.panoramicManager.updateTexture(video);
-        if (type === 'dash') {
-            this.player.getVideoInfo().update(VideoInfoData.generateVideoInfoItems('DashPlayer'));
-        } else {
-            this.player.getVideoInfo().update(VideoInfoData.generateVideoInfoItems(changePlayer['type']));
+        if (this.player.getVideoInfo) {
+            if (type === 'dash') {
+                this.player.getVideoInfo().update(VideoInfoData.generateVideoInfoItems('DashPlayer'));
+            } else {
+                this.player.getVideoInfo().update(VideoInfoData.generateVideoInfoItems(changePlayer['type']));
+            }
         }
         if (!pipMode) {
             try {

@@ -93,6 +93,7 @@ export interface IPlayerConfig {
     dmid?: string | null;
     dmProgress?: number | null;
     recommendAutoPlay?: boolean;
+    url?: string;
 }
 export interface IPlayerConfigExtend extends IPlayerConfig {
     [key: string]: any;
@@ -623,6 +624,12 @@ function rebuildPlayerConfig(input: any): IPlayerConfig {
         },
         set replyDmid(val: string) {
             input['replyDmid'] = val;
+        },
+        get url(): string {
+            return input['url'];
+        },
+        set url(val: string) {
+            input['url'] = val;
         },
         get fjw(): boolean {
             return input['fjw'];
