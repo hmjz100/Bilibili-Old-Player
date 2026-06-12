@@ -620,7 +620,7 @@ class Playlist {
         if (sIndex === this.listInfo.sortedList.length - 1) {
             sIndex = 0;
         }
-        let next: IPageItem | void;
+        let next: IPageItem | undefined;
         for (let i = sIndex; i < this.listInfo.sortedList.length; i++) {
             if (bvidPlaying && this.listInfo.sortedList[i].bvid !== bvidPlaying) {
                 next = this.listInfo.sortedList[i];

@@ -144,7 +144,7 @@ window.flashChecker = () => {
         /Trident/i.test(navigator.userAgent); // 是否IE浏览器
     if (isIE) {
         try {
-            const swf = new window.ActiveXObject('ShockwaveFlash.ShockwaveFlash');
+            const swf = new window.ActiveXObject!('ShockwaveFlash.ShockwaveFlash');
             if (swf) {
                 hasFlash = true;
                 const vSwf = swf.GetVariable('$version');
@@ -257,6 +257,7 @@ declare global {
         BiliPBP?: new (param: any) => Window["$pbp"];
         userSetVol?: boolean;
         show1080p?: Function;
+        ActiveXObject?: new (ProgID: string) => any;
     }
     interface WheelEvent {
         wheelDelta?: number;

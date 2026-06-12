@@ -96,17 +96,17 @@ export default class Main {
             : 'ws://broadcast.chat.bilibili.com:7822/sub';
     }
     private initialize(url: string) {
-        const cWebSocket = 'MozWebSocket' in window ? window.MozWebSocket : window.WebSocket,
+        const cWebSocket = 'MozWebSocket' in window ? (window as any).MozWebSocket : WebSocket,
             options = this.options;
         try {
-            this.ws = new cWebSocket!(url);
+            this.ws = new cWebSocket(url);
 
-            this.ws.binaryType = 'arraybuffer';
+            this.ws!.binaryType = 'arraybuffer';
 
-            this.ws.onopen = this.onOpen.bind(this);
-            this.ws.onmessage = this.onMessage.bind(this);
-            this.ws.onclose = this.onClose.bind(this);
-            this.ws.onerror = this.onError.bind(this);
+            this.ws!.onopen = this.onOpen.bind(this);
+            this.ws!.onmessage = this.onMessage.bind(this);
+            this.ws!.onclose = this.onClose.bind(this);
+            this.ws!.onerror = this.onError.bind(this);
 
             UTILS.callFunction(this.callbackQueueList.onInitializedQueue);
             this.callbackQueueList.onInitializedQueue = [];

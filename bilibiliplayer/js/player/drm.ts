@@ -23,7 +23,7 @@ export class Drm {
         const cer = await this.getHttpCer();
         const gen = sdk.biliDRMGenSPC(this.streamKid!, uniqueId, cer);
         const ckc = await this.getHttpCkc(gen.spc);
-        const parse = sdk.biliDRMParseCKC(ckc, uniqueId);
+        const parse = sdk.biliDRMParseCKC(ckc.buffer, uniqueId);
         const key = this.toUrl(this.encodeHex(this.streamKid!));
         const value = this.toUrl(parse.key);
         if (!parse || !parse.key) {
@@ -57,7 +57,7 @@ export class Drm {
     }
     protected async getWidevineDetail() {
         const cer = await this.getHttpWidevineCer();
-        const result = this.arrayBufferToBase64(new Uint8Array(cer));
+        const result = this.arrayBufferToBase64(cer);
         if (!result) {
             throw new Error("DRM: Get Widevine ServerCertificate Failed");
         }
