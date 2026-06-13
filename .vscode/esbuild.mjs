@@ -3,11 +3,15 @@ import esbuild from 'esbuild';
 import fs from 'fs-extra';
 import { exec } from 'child_process';
 
+const version = pkg.version;
+console.log("Building Player...");
+console.log("Version: ", version);
+
 /**
  * 获取项目的 `commit` 哈希值
  * @returns {Promise<string>} `commit` 哈希值
  */
-function getHash() {
+function getProjectHash() {
 	return new Promise((resolve, reject) => {
 		exec(`git rev-parse HEAD`, { cwd: process.cwd() }, (e, d) => {
 			e && reject(e);
@@ -16,9 +20,8 @@ function getHash() {
 	})
 }
 
-const hash = await getHash();
-const version = pkg.version;
-const revision = hash.slice(0, 7);
+const commit = await getProjectHash();
+console.log("Commit: ", commit);
 
 esbuild.build({
 	entryPoints: ['src/video.ts'], // 入口脚本
@@ -34,7 +37,7 @@ esbuild.build({
 	// charset: 'utf8', // 文件编码
 	define: {
 		_BUILD_VERSION_: `'${version}'`,
-		_BUILD_REVISION_: `'${revision}'`,
+		_BUILD_REVISION_: `'${commit}'`,
 		_BUILD_TIME_: `'${new Date().toISOString()}'`,
 	},
 	loader: { // 文件对应的解析方式
