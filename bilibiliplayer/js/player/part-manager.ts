@@ -380,6 +380,8 @@ class PartManager {
 				}
 			} else {
 				cid = this.search(p);
+				aid = player.config.aid;
+				bvid = player.config.bvid;
 			}
 			litsItem = {
 				aid,
