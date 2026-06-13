@@ -1,13 +1,12 @@
 <div align="center">
 <img width="90" src="bilibiliplayer/images/ploading.gif" style="background:white" alt="logo">
 
-# Bilibili-Old Player
+# Bilibili-Old Player (Classic)
 [哔哩哔哩弹幕网](//www.bilibili.com) 于 2019 年 12 月 09 日弃用的经典播放器。  
 年旧失修，残破不堪。为了便于长期维护，使用 `TypeScript` 进行了重构。
-
 </div>
 
-## 重构说明  
+## 说明  
 基于 [`video.min.js`](//static.hdslb.com/js/video.min.js)、[`bilibiliPlayer.min.js`](//static.hdslb.com/player/js/bilibiliPlayer.min.js) 等原文件，参考 [`jsc-player(2.x)`](//s1.hdslb.com/bfs/static/player/main/video.js) 和 [`bpx-player(3.x)`](https://s1.hdslb.com/bfs/static/player/main/core.js) 系列，擅自揣测了各被混淆的类、方法、属性名……改写为了 ts 代码并补充了类型声明，还移植了一些新功能。
 
 ## TODO
@@ -56,8 +55,9 @@ mklink /D dist ..\Bilibili-Old\extension\player
 *如果提示`当文件已存在时，无法创建该文件。`，请先删除 `dist` 目录后操作。*
 
 ## 特别鸣谢
-- [Bilibili](//www.bilibili.com)：始乱之，终弃之。感谢曾经开发了这个播放器。
-- [esbuild](//esbuild.github.io/)：人生苦短，何苦 webpack！希望能支持打包 CSS 进 JS 文件！
+- [MotooriKashin](//github.com/MotooriKashin) - 原项目的作者，感谢他的工作。
+- [Bilibili](//www.bilibili.com) - 始乱之，终弃之。感谢曾经开发了这个播放器。
+- [esbuild](//esbuild.github.io/) - 人生苦短，何苦 webpack！希望能支持打包 CSS 进 JS 文件！
 
 ## License
 [MIT](LICENSE)
