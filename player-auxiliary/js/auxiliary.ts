@@ -197,8 +197,13 @@ class Auxiliary {
     reload(config: any) {
         if (config && config.cid) {
             this.config.cid = config.cid;
-            this.config.aid = config.aid;
-            this.config.bvid = config.bvid;
+            // 修复：只有有效值才更新 aid/bvid，防止 false 或空字符串被设置
+            if (config.aid) {
+                this.config.aid = config.aid;
+            }
+            if (config.bvid) {
+                this.config.bvid = config.bvid;
+            }
             this.config.isPremiere = config.isPremiere;
         }
         this.trigger(STATE.EVENT.AUXILIARY_PANEL_RELOAD);

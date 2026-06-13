@@ -326,10 +326,13 @@ async function resolve(resolveParams: any, resolved: any, rejected?: any) {
         } else {
             const stime = Date.now();
             const isPugv = player.config.type === ContentType.Pugv || player.config.type === ContentType.PugvCenter;
+            // 确保 avid 和 bvid 是有效值，避免 false 或空字符串被发送到 API
+            const avid = (resolveParams.aid && resolveParams.aid > 0) ? resolveParams.aid : ((player.config.aid && player.config.aid > 0) ? player.config.aid : 0);
+            const bvid = (resolveParams.bvid && resolveParams.bvid.length > 0) ? resolveParams.bvid : ((player.config.bvid && player.config.bvid.length > 0) ? player.config.bvid : '');
             const data: ApiPlayurlInData = {
-                avid: resolveParams.aid || player.config.aid,
+                avid: avid,
                 cid: resolveParams.cid,
-                bvid: resolveParams.bvid || player.config.bvid,
+                bvid: bvid,
                 qn: resolveParams.quality,
                 type: resolveParams.type,
                 fnver: resolveParams.fnver,

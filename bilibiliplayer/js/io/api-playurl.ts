@@ -118,11 +118,11 @@ class ApiPlayurl extends Api {
 
     private convertUpload(data: IInData): IRequestData {
         const uploadData: IRequestData = {
-            avid: data.avid,
+            avid: typeof data.avid === 'number' && data.avid > 0 ? data.avid : 0,
             cid: data.cid,
-            bvid: data.bvid,
+            bvid: typeof data.bvid === 'string' && data.bvid ? data.bvid : '',
             qn: data.qn,
-            type: data.type,
+            type: typeof data.type === 'string' && data.type ? data.type : '',
             otype: 'json',
             // DRM fields
             from_client: 'BROWSER',
