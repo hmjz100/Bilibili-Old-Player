@@ -379,7 +379,10 @@ class PartManager {
                     this.player.config.hasNext = true;
                 }
             } else {
+                // 普通视频
                 cid = this.search(p);
+                aid = player.config.aid;
+                bvid = player.config.bvid;
             }
             litsItem = {
                 aid,
