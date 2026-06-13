@@ -141,9 +141,6 @@ export class ReloadMedia {
 			type: this.player.allowFlv ? '' : 'mp4',
 			extra_params: this.player.config.extraParams,
 			player: this.player,
-			// 修复换P时avid/bvid参数缺失问题
-			aid: this.player.config.aid,
-			bvid: this.player.config.bvid,
 		};
 
 		if (resolveParams.extra_params) {
