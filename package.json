@@ -7,14 +7,6 @@
 		"build": "npm update && node .vscode/esbuild.mjs",
 		"build-as3-danmaku": "node ./as3-danmaku/build.mjs"
 	},
-	"devDependencies": {
-		"@types/jquery": "^3.5.33",
-		"@types/mcustomscrollbar": "^2.8.37",
-		"@types/md5": "^2.3.6",
-		"esbuild": "^0.20.2",
-		"reverse-sourcemap": "^1.0.4",
-		"typescript": "^5.9.3"
-	},
 	"dependencies": {
 		"@jsc/ace": "file:ace",
 		"@jsc/adv-danmaku": "file:adv-danmaku",
@@ -50,5 +42,13 @@
 		"malihu-custom-scrollbar-plugin": "^3.1.5",
 		"md5": "^2.3.0",
 		"protobufjs": "^7.5.4"
+	},
+	"devDependencies": {
+		"@types/jquery": "^3.5.33",
+		"@types/mcustomscrollbar": "^2.8.37",
+		"@types/md5": "^2.3.6",
+		"esbuild": "^0.20.2",
+		"reverse-sourcemap": "^1.0.4",
+		"typescript": "^5.9.3"
 	}
 }
