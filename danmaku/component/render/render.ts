@@ -11,10 +11,10 @@ export abstract class Render {
     textData: ITextDataInterface | null;
     x: number;
     y: number;
-    /* tslint:disable */
+    /** tslint:disable */
     _x!: number;
     _y!: number;
-    /* tslint:enable */
+    /** tslint:enable */
     width: number;
     height: number;
     index: number;

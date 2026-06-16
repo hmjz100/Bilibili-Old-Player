@@ -1809,11 +1809,11 @@ class Player {
 					}
 				});
 				if (that.dashPlayer) {
-					// if (status.login) {
-					that.dashPlayer['setAutoSwitchTopQualityFor']('video');
-					// } else {
-					//     that.dashPlayer['setAutoSwitchTopQualityFor']('video', gtQualityNeedLogin);
-					// }
+					if (status.login) {
+						that.dashPlayer['setAutoSwitchTopQualityFor']('video');
+					} else {
+						that.dashPlayer['setAutoSwitchTopQualityFor']('video', gtQualityNeedLogin);
+					}
 				}
 				return false;
 			}

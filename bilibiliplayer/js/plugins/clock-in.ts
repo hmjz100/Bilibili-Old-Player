@@ -81,7 +81,7 @@ export default class ClockIn extends PopupBase {
     dragFlag!: boolean;
     btn: any;
     player: any;
-    /**打卡文字状态描述 1打卡 2已打卡 3查看记录 4去分享 5重新打卡 */
+    /** 打卡文字状态描述 1打卡 2已打卡 3查看记录 4去分享 5重新打卡 */
     btnState?: number;
 
     constructor(opt: IConfig) {

@@ -445,7 +445,7 @@ class GrayManagerClass {
     }
 
     _loadNoFlashTips() {
-        import(/* webpackChunkName: "no-flash-tips" */ '@jsc/no-flash-tips').then((s) => {
+        import(/** webpackChunkName: "no-flash-tips" */ '@jsc/no-flash-tips').then((s) => {
             window.NoFlashTips = s.default;
             this._createNoFlashTipsInstance();
         });
@@ -1074,7 +1074,7 @@ class GrayManagerClass {
                     playerStyle && playerStyle.parentNode && playerStyle.parentNode.removeChild(playerStyle);
 
                     this.isLoadingPlayerjs = import(
-                            /* webpackChunkName: "player", webpackPreload: true */ '@jsc/bilibiliplayer/bilibiliPlayer'
+                            /** webpackChunkName: "player", webpackPreload: true */ '@jsc/bilibiliplayer/bilibiliPlayer'
                     ).then((s) => {
                         window.BilibiliPlayer = s.BilibiliPlayer;
                         this.newH5Player();
@@ -1427,7 +1427,7 @@ class GrayManagerClass {
     }
 
     private mustH5() {
-        import(/* webpackChunkName: "musth5" */ '@jsc/must-h5').then((s) => {
+        import(/** webpackChunkName: "musth5" */ '@jsc/must-h5').then((s) => {
             new s.default({
                 id: 'bofqi',
                 url: '//s1.hdslb.com/bfs/static/player/img/h5.png',

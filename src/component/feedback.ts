@@ -15,7 +15,7 @@ const feedback: IFeedback = {
         const bgrayBtn = document.querySelector('.player-wrapper .bgray-btn-wrap .bgray-btn.show');
         bgrayBtn && bgrayBtn.classList.add('player-feedback-disable');
         import(
-            /* webpackChunkName: "feedback" */
+            /** webpackChunkName: "feedback" */
             '@jsc/b-back'
         )
             .then((s) => {

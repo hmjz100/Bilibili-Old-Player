@@ -11,17 +11,17 @@ import Interface from './urls';
 
 // module -> api-in
 interface IInData {
-    /**  寻宝球id */
+    /** 寻宝球id */
     item_id: number;
     mid: number; //
-    /**  答案，寻宝球为答题领取时必填 */
+    /** 答案，寻宝球为答题领取时必填 */
     answer?: string;
 }
 
 export interface IOutDmAdGet {
     code: number; // 返回码 0 成功 非0 失败
     message: string;
-    /**领取结果，1：成功，2：答案错误，3：活动未开始，4：活动已结束，5：寻宝球不存在 */
+    /** 领取结果，1：成功，2：答案错误，3：活动未开始，4：活动已结束，5：寻宝球不存在 */
     result: number;
 }
 

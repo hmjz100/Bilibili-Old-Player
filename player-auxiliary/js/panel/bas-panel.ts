@@ -221,7 +221,7 @@ class BasPanel {
                 this.resize();
             });
 
-            import(/* webpackChunkName: "ace" */ '@jsc/ace').then((s) => {
+            import(/** webpackChunkName: "ace" */ '@jsc/ace').then((s) => {
                 this.initEditor();
             });
 

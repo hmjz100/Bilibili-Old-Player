@@ -107,7 +107,7 @@ export default class Socket {
     private retryCount = 0;
     /** 是否以销毁 */
     private disposed!: boolean;
-    /* 每次发送消息，唯一标识 */
+    /** 每次发送消息，唯一标识 */
     private seq = 1;
 
     /** 重试定时器, 链接成功，清除定时器 */

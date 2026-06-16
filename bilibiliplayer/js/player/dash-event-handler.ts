@@ -69,7 +69,7 @@ export class DashEventHandler {
         );
         dashPlayer['on'](
             window['DashPlayer']['EVENTS']['QUALITY_CHANGE_REQUESTED'],
-            (evt: any/* DashPlugin.IQualityChangedData*/) => {
+            (evt: any/** DashPlugin.IQualityChangedData*/) => {
                 if (evt['isAutoSwitch'] && evt['mediaType'] === 'video') {
                     that.player.videoRealQuality = evt['newQualityNumber']!;
                 }

@@ -350,33 +350,33 @@ export class Shape extends DisplayObject {
             switch (commands[i]) {
                 default:
                 case 0: {
-                    /* NoOp x0 */
+                    /** NoOp x0 */
                     continue;
                 } break;
                 case 1: {
-                    /* MoveTo x2 */
+                    /** MoveTo x2 */
                     d += " M" + data.splice(0, 2).join(" ");
                 } break;
                 case 2: {
-                    /* LineTo x2 */
+                    /** LineTo x2 */
                     d += " L" + data.splice(0, 2).join(" ");
                 } break;
                 case 3: {
-                    /* CurveTo x4 */
+                    /** CurveTo x4 */
                     d += " Q" + data.splice(0, 4).join(" ");
                 } break;
                 case 4: {
-                    /* wide MoveTo x4 */
+                    /** wide MoveTo x4 */
                     data.splice(0, 2);
                     d += " M" + data.splice(0, 2).join(" ");
                 } break;
                 case 5: {
-                    /* wide LineTo x4 */
+                    /** wide LineTo x4 */
                     data.splice(0, 2);
                     d += " L" + data.splice(0, 2).join(" ");
                 } break;
                 case 6: {
-                    /* CubicCurveTo x6 */
+                    /** CubicCurveTo x6 */
                     d += " C" + data.splice(0, 6).join(" ");
                 } break;
             }

@@ -104,7 +104,7 @@ export default class Combo {
     private loadCombo() {
         if (!this.comboPromise) {
             this.comboPromise = new Promise((res, rej) => {
-                import(/* webpackChunkName: "comboNew" */ '@jsc/combo')
+                import(/** webpackChunkName: "comboNew" */ '@jsc/combo')
                     .then((s) => {
                         res(s.default);
                     })

@@ -120,7 +120,7 @@ export class DmBoom {
         send: 0,
         show: 0,
     };
-    /* 目前只供animation 弹幕使用 */
+    /** 目前只供animation 弹幕使用 */
     loadPromise: { [key: string]: Promise<any> } = {};
     fold: {
         [key: string]: IFold;

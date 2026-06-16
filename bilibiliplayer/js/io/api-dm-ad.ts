@@ -22,30 +22,30 @@ interface IInData {
 
 // api-out -> module
 export interface IDmAd {
-    /**寻宝球id */
+    /** 寻宝球id */
     ballId: number;
-    /**选择 图片地址 */
+    /** 选择 图片地址 */
     imgUrl: string;
-    /**选择 问题 */
+    /** 选择 问题 */
     title: string;
-    /**浮层出现时间, 单位ms */
+    /** 浮层出现时间, 单位ms */
     from: number;
-    /**浮层结束时间, 单位ms */
+    /** 浮层结束时间, 单位ms */
     to: number;
-    /**浮层出现时间, 单位ms */
+    /** 浮层出现时间, 单位ms */
     duration: number;
-    /**碎片领取状态, 0-未领取, 1-已领取 */
+    /** 碎片领取状态, 0-未领取, 1-已领取 */
     state: number;
-    /**背景颜色 */
+    /** 背景颜色 */
     bg: string;
-    /**跳转链接 */
+    /** 跳转链接 */
     btnSrc: string;
-    /**拓展 文案 有的时候才展示*/
+    /** 拓展 文案 有的时候才展示*/
     tagImg: string;
     tagText: string;
-    /**失败 文案*/
+    /** 失败 文案*/
     errText: string;
-    /**是否已选择*/
+    /** 是否已选择*/
     selected?: boolean;
     select?: {
         a: string;

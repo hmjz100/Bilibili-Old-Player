@@ -409,7 +409,7 @@ class CodePanel {
         if (!this.inited) {
             this.init();
             import(
-                /* webpackChunkName: "ace" */
+                /** webpackChunkName: "ace" */
                 '@jsc/ace'
             ).then((s) => {
                 this.initEditor();

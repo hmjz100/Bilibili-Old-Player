@@ -85,7 +85,7 @@ class SpaceManager {
                 }
             }
         }
-        /* console.log(this.lists); */
+        /** console.log(this.lists); */
         return true;
     }
 
@@ -153,9 +153,9 @@ class SpaceManager {
         }
     }
 
-    /* setY end */
+    /** setY end */
     insert(list: BinaryArray<IRenderExtInterface>, txt: IRenderExtInterface) {
-        /* binary insertion sort */
+        /** binary insertion sort */
         list.binsert(txt, function (a: IRenderExtInterface, b: IRenderExtInterface) {
             if (!b || !a) {
                 return 0;

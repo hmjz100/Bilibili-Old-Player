@@ -78,7 +78,7 @@ export class DisplayObject {
     eventToggle(eventName: string, mode = "enable") {
         if (DisplayObject.SANDBOX_EVENTS.indexOf(eventName) > -1) {
             return;
-            /* No need to notify */
+            /** No need to notify */
         }
         __pchannel("Runtime:ManageEvent", {
             "id": this.id,

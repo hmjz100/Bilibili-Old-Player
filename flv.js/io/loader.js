@@ -51,7 +51,7 @@ export const LoaderEvents = {
 export class BaseLoader {
     constructor(typeName) {
         this._type = typeName || 'undefined';
-        /** @private */
+        /* @private */
         this._status = LoaderStatus.kIdle;
         this._needStash = false;
         // callbacks
