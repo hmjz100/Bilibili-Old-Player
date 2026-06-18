@@ -213,7 +213,7 @@ export class Menu extends Base {
         const prefix = this.prefix;
 
         return this.currentElement.find(this.options.items!).filter("." + prefix + "menu-item").filter(function () {
-            return reg.test($.trim($(this).text()));
+            return reg.test(($(this).text()).trim());
         });
     }
     protected enter(c: IEvent) {

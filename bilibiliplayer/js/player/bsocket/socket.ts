@@ -181,7 +181,7 @@ export default class Socket {
                     console.warn('is CONNECTING');
                     break;
                 case 1:
-                    this.ws?.send(info);
+                    this.ws?.send(info as Uint8Array<ArrayBuffer>);
                     break;
                 default:
                     this.retry();

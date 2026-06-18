@@ -1,5 +1,5 @@
 import Socket from './socket';
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
 import Protobuf from 'protobufjs/light';
 import { EVENTS } from './state';
 // Broadcast gRPC 链路改造

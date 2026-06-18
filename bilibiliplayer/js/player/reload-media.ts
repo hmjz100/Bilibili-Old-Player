@@ -190,7 +190,12 @@ export class ReloadMedia {
 					}
 					that.player.trigger(STATE.EVENT.VIDEO_PLAYURL_LOADED);
 					that.player.currentStreamType = result.streamType;
-					that.player.flushExtraParams(result.headTail);
+					that.player.flushExtraParams(result.skipSegments);
+					// 切换清晰度/视频后重新初始化跳过片段，确保新视频的可跳过片段数据生效
+					const skipSegments = that.player.extraParams?.skipSegments;
+					if (skipSegments?.hasData) {
+						that.player.controller.progressBar.newSkip(skipSegments);
+					}
 					const unpaid = that.player.unpaid(result.isPreview);
 					const noauth =
 						(Number(result.vipType) === 0 || Number(result.vipStatus) !== 1) &&

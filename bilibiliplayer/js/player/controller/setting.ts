@@ -570,7 +570,7 @@ class Setting {
     }
 
     /** 跳过片头片尾 */
-    initSkipHeadTail() {
+    initSkipSegments() {
         if (this.settingItem.skipheadtail) return;
         const skipheadtail = this.player.template.setting.find(`.${this.prefix}-setting-skipheadtail`)
         this.settingItem.skipheadtail = new Checkbox(skipheadtail, {

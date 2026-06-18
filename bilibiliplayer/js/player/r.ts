@@ -9,7 +9,7 @@ import { DolbyEffectType } from './controller/dolby-button';
 import Player from '../player';
 import { browser, qualityMap } from '@shared/utils';
 import { Drm } from './drm';
-import { IHeadTail } from '../io/rebuild-player-extra-params';
+import { ISkipSegments } from '../io/rebuild-player-extra-params';
 
 export interface IDashSegmentInterface {
 	id?: number;
@@ -504,7 +504,7 @@ async function parse(body: any, enableSSLStream?: any, reject?: any, playurl?: a
 	let supportFormats = null;
 	let permissionDenied = null;
 	let drmTechType = null;
-	let headTail: any;
+	let skipSegments: any;
 
 	const mediaDataSource: IMediaDataSourceInterface = {};
 	const data = body.data ? body.data : $.isPlainObject(body.result) ? body.result : body; // ApiPlayurl 接口使用 body.data，旧接口和 window['__playinfo__'] 使用 body
@@ -774,7 +774,7 @@ async function parse(body: any, enableSSLStream?: any, reject?: any, playurl?: a
 	// 跳过片头片尾
 	const clip_info_list = data['clip_info_list'];
 	if (clip_info_list && Array.isArray(clip_info_list)) {
-		headTail = {
+		skipSegments = {
 			hasSkip: true,
 			hasData: true,
 			first: false,
@@ -782,12 +782,12 @@ async function parse(body: any, enableSSLStream?: any, reject?: any, playurl?: a
 		clip_info_list.forEach(d => {
 			switch (d.clipType) {
 				case 'CLIP_TYPE_OP':
-					headTail.head || (headTail.head = []);
-					headTail.head.push(d.start, d.end);
+					skipSegments.head || (skipSegments.head = []);
+					skipSegments.head.push(d.start, d.end);
 					break;
 				case 'CLIP_TYPE_ED':
-					headTail.tail || (headTail.tail = []);
-					headTail.tail.push(d.start, d.end);
+					skipSegments.tail || (skipSegments.tail = []);
+					skipSegments.tail.push(d.start, d.end);
 					break;
 				default:
 					break;
@@ -842,7 +842,7 @@ async function parse(body: any, enableSSLStream?: any, reject?: any, playurl?: a
 
 		fullPlayDisabled: permissionDenied || isPreview,
 
-		headTail: { headTail }
+		skipSegments: { skipSegments }
 	};
 }
 

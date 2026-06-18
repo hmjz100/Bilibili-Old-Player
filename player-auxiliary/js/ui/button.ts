@@ -218,7 +218,7 @@ export class Button extends Base {
 
                 if (!this.options.text) {
                     addClass.push(isIcon ? "" + prefix + "button-icons-only" : prefix + "button-icon-only");
-                    this.isTltle || targetElement.attr("title", $.trim(span));
+                    this.isTltle || targetElement.attr("title", span.trim());
                 }
                 if (this.options.name) {
                     this.targetElement.children()?.attr("name", this.options.name);

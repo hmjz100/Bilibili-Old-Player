@@ -9,28 +9,30 @@ export default function () {
 const footer = `//@ sourceURL=as3-parser.js\`, "Worker", undefined, undefined);
 }
 `;
+
 const plugin = {
-    name: 'example',
-    setup(build) {
-        build.onEnd(result => {
-            result.outputFiles.forEach(d => {
-                fs.promises.writeFile(d.path, banner + d.text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$').replace('"use strict";', '') + footer);
-            })
-        })
-    },
+	name: 'example',
+	setup(build) {
+		build.onEnd(result => {
+			result.outputFiles.forEach(d => {
+				fs.promises.writeFile(d.path, banner + d.text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$').replace('"use strict";', '') + footer);
+			})
+		})
+	},
 };
+
 esbuild.build({
-    entryPoints: ["./worker/Worker.ts"],
-    target: "chrome76",
-    bundle: true,
-    format: 'iife',
-    minify: true,
-    treeShaking: true,
-    charset: 'utf8',
-    plugins: [
-        plugin
-    ],
-    keepNames: true,
-    write: false,
-    outfile: './host/worker.js'
+	entryPoints: ["./worker/Worker.ts"],
+	target: "es2015",
+	format: "iife",
+	charset: "utf8",
+	bundle: true,
+	minify: true,
+	treeShaking: true,
+	keepNames: true,
+	write: false,
+	plugins: [
+		plugin
+	],
+	outfile: './host/worker.js'
 })

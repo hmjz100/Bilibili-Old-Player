@@ -879,8 +879,8 @@ class Send {
             msg: text,
         };
         if (flag.link) {
-            info.bvid = $.trim(text).split(' ')[0];
-            info.msg = $.trim(text.replace(info.bvid, ''));
+            info.bvid = text.trim().split(' ')[0];
+            info.msg = text.replace(info.bvid, '').trim();
         }
         danmaku.text = info.msg;
         const data: ApiCMDInData = {

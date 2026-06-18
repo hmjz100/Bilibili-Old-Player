@@ -59,10 +59,7 @@ import { ActionType, ContentType } from '@jsc/namespace';
 import { METADATA } from '@jsc/namespace/metadata';
 import PlayerAuxiliary from '@jsc/player-auxiliary';
 import Tooltip from '@jsc/player-auxiliary/js/plugins/tooltip';
-import {
-	browser, dateParser, detectGPU,
-	getBit, getCookie, getLocalSettings, getSearchParam, getSessionID, Log, qualityMap, setCookie, setLocalSettings, thumbnail, timeParser
-} from '@shared/utils';
+import { browser, dateParser, detectGPU, getBit, getCookie, getLocalSettings, getSearchParam, getSessionID, Log, qualityMap, setCookie, setLocalSettings, thumbnail, timeParser } from '@shared/utils';
 import { BilibiliPlayer } from '../bilibiliPlayer';
 import ApiPremiereStatus, { ApiPremiereStatusInData, ApiPremiereStatusOutData } from './io/api-premiere-status';
 import { DolbyEffectType } from './player/controller/dolby-button';
@@ -290,6 +287,11 @@ class Player {
 			JSON.parse(getLocalSettings(this.config.storageName)!),
 		);
 
+		// 初次打开时，如果 localStorage 中没有设置，立即保存默认设置
+		if (!getLocalSettings(this.config.storageName)) {
+			setLocalSettings(this.config.storageName, JSON.stringify(this.videoSettings));
+		}
+
 		if (browser.version.safari && !browser.version.safariSupportMSE) {
 			// disable because of Safari buggy MSE implementation
 			this.allowFlv = false;
@@ -429,7 +431,12 @@ class Player {
 		this.errorPlayurl = false;
 		this.mediaDataSource = result.mediaDataSource;
 		this.currentStreamType = result.streamType;
-		this.flushExtraParams(result.headTail);
+		this.flushExtraParams(result.skipSegments);
+		// 预加载阶段更新可跳过片段数据，确保播放开始时即可生效
+		const skipSegments = this.extraParams?.skipSegments;
+		if (skipSegments?.hasData) {
+			this.controller?.progressBar.newSkip(skipSegments);
+		}
 		const notStart =
 			this.extraParams &&
 			typeof this.extraParams.isStart === 'boolean' &&
@@ -1984,13 +1991,13 @@ class Player {
 
 		this.endingpanelInitialized = false;
 
-		// 初始化跳过片头片尾
-		const headTail = this.extraParams?.headTail;
-		if (headTail?.hasData) {
-			this.controller.progressBar.newSkip(headTail);
+		// 初始化跳过片段
+		const skipSegments = this.extraParams?.skipSegments;
+		if (skipSegments?.hasData) {
+			this.controller.progressBar.newSkip(skipSegments);
 		}
-		if (headTail?.hasSkip) {
-			this.settingPanel.initSkipHeadTail();
+		if (skipSegments?.hasSkip) {
+			this.settingPanel.initSkipSegments();
 		}
 
 		// initialize tooltips
@@ -2243,7 +2250,12 @@ class Player {
 					that.trigger(STATE.EVENT.VIDEO_PLAYURL_LOADED);
 					that.mediaDataSource = result.mediaDataSource;
 					that.currentStreamType = result.streamType;
-					that.flushExtraParams(result.headTail);
+					that.flushExtraParams(result.skipSegments);
+					// 切换视频/清晰度后重新初始化跳过片段，确保新视频的可跳过片段数据生效
+					const skipSegments = that.extraParams?.skipSegments;
+					if (skipSegments?.hasData) {
+						that.controller?.progressBar.newSkip(skipSegments);
+					}
 					const noauth =
 						(Number(result.vipType) === 0 || Number(result.vipStatus) !== 1) &&
 						Number(result.bp) !== 1 &&
@@ -3121,12 +3133,12 @@ class Player {
 				break;
 			case ContentType.OgvExtraParams:
 			case ActionType.extra: {
-				const headTail = this.extraParams?.headTail;
-				if (headTail?.hasData) {
-					this.controller.progressBar.newSkip(headTail);
+				const skipSegments = this.extraParams?.skipSegments;
+				if (skipSegments?.hasData) {
+					this.controller.progressBar.newSkip(skipSegments);
 				}
-				if (headTail?.hasSkip) {
-					this.settingPanel.initSkipHeadTail();
+				if (skipSegments?.hasSkip) {
+					this.settingPanel.initSkipSegments();
 				}
 				break;
 			}

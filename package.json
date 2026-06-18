@@ -3,7 +3,7 @@
 	"version": "1.0.0",
 	"author": "Hmjz100",
 	"scripts": {
-		"tsc": "tsc -p ./tsconfig.json  --noEmit",
+		"tsc": "tsc -p ./tsconfig.json  --noEmit --removeComments",
 		"build": "npm update && node .vscode/esbuild.mjs",
 		"build-as3-danmaku": "node ./as3-danmaku/build.mjs"
 	},

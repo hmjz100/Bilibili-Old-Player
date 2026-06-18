@@ -102,7 +102,7 @@ class Modal {
 
     private option(key: string, value: any) {
         // console.log('%cAre U Ok? '  + key + value , 'color:red;font-size:30px;');
-        if ('undefined' !== $.type(value)) {
+        if ('undefined' !== typeof value) {
             switch (key) {
                 case 'title':
                     value && this.template.title!.html(value);

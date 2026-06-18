@@ -112,7 +112,7 @@ export default <BILIBILI_PLAYER_SETTINGS>{
         dolbyAtmos: false, // 是否开启杜比音效
         audioHiRes: false, // 是否开启无损音频
         danmakunumber: -1,
-        danmakuplugins: false // 互动弹幕
+        danmakuplugins: true // 互动弹幕
     },
     video_status: {
         autopart: 1,
@@ -127,7 +127,7 @@ export default <BILIBILI_PLAYER_SETTINGS>{
         panoramamode_reddot_status: true,
         videospeed: 1,
         volume: 0.66,
-        skipheadtail: 0
+        skipheadtail: 1
     },
     block: {
         status: true,
