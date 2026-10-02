@@ -46,9 +46,9 @@
 然后执行 [Bilibili-Old](https://github.com/hmjz100/Bilibili-Old) 项目的编译命令生成对应的扩展或用户脚本即可进行测试。
 
 也可使用操作系统提供的符号链接功能将本项目的 `dist` 目录链接到 [Bilibili-Old](https://github.com/hmjz100/Bilibili-Old) 项目的 `extension/player` 目录  
-直接将本项目编译的文件输出到 [Bilibili-Old](https://github.com/hmjz100/Bilibili-Old) 项目，免去复制步骤。  
+此方法能够直接将本项目编译的文件输出到 [Bilibili-Old](https://github.com/hmjz100/Bilibili-Old) 项目，免去复制步骤。  
 
-如果使用 Windows 操作系统并且两个项目位于磁盘的同一级目录中，那么可以使用**管理员**命令提示符输入：
+如果使用 Windows 操作系统并且两个项目的文件夹都位于同一目录中，那么就可以使用**管理员**命令提示符输入下方的命令来创建符号链接了。
 ```
 mklink /D dist ..\Bilibili-Old\extension\player
 ```

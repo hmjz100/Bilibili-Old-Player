@@ -22,3 +22,5 @@
   - "speed-tester"
   - "websocket-broadcast"
   - "shared"
+allowBuilds:
+  esbuild: true

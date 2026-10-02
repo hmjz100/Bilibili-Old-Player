@@ -50,5 +50,9 @@
 		"esbuild": "^0.28.1",
 		"reverse-sourcemap": "^1.0.4",
 		"typescript": "^6.0.3"
+	},
+	"allowScripts": {
+		"file:../../as3-danmaku": true,
+		"esbuild@0.28.2": true
 	}
 }
