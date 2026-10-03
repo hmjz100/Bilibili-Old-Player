@@ -1,5 +1,17 @@
 import { browser } from "@shared/utils";
 
+export const DANMAKU_FONT_FALLBACK = '"Segoe UI Variable", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans SC", "Noto Sans CJK SC", Roboto, "Helvetica Neue", Helvetica, Arial, SimHei, system-ui, sans-serif, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Symbol"';
+
+export function getDanmakuFontFamily(fontFamily?: string): string {
+    const selectedFont = fontFamily?.trim();
+    if (!selectedFont) {
+        return DANMAKU_FONT_FALLBACK;
+    }
+    return selectedFont.endsWith(DANMAKU_FONT_FALLBACK)
+        ? selectedFont
+        : `${selectedFont}, ${DANMAKU_FONT_FALLBACK}`;
+}
+
 export interface BILIBILI_PLAYER_SETTINGS {
     setting_config: {
         type: 'canvas' | 'div';
@@ -95,7 +107,7 @@ export default <BILIBILI_PLAYER_SETTINGS>{
         type: browser.version.gecko && !browser.version.trident ? 'canvas' : 'div',
         opacity: 0.8,
         fontfamily: browser.version.linux ? "'Noto Sans CJK SC DemiLight'" : "SimHei, 'Microsoft JhengHei'",
-        fontfamilycustom: '',
+        fontfamilycustom: DANMAKU_FONT_FALLBACK,
         bold: browser.version.iOS ? false : true,
         preventshade: false,
         fontborder: '0',

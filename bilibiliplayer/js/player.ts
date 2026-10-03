@@ -2,7 +2,7 @@
 import md5 from 'md5';
 import AdvDanmaku from './adv-danmaku/adv-danmaku';
 import SessionController from './player/session-controller';
-import BILIBILI_PLAYER_SETTINGS from './player/settings';
+import BILIBILI_PLAYER_SETTINGS, { DANMAKU_FONT_FALLBACK, getDanmakuFontFamily } from './player/settings';
 import STATE, { FNVAL_TYPE, PLAYER_CODEC_ID, PLAYER_STATE } from './player/state';
 import AllPlugins from './plugins/all-plugins';
 import csrf from './plugins/csrf';
@@ -286,6 +286,10 @@ class Player {
 			BILIBILI_PLAYER_SETTINGS,
 			JSON.parse(getLocalSettings(this.config.storageName)!),
 		);
+		if (!this.videoSettings.setting_config.fontfamilycustom) {
+			this.videoSettings.setting_config.fontfamilycustom = DANMAKU_FONT_FALLBACK;
+			setLocalSettings(this.config.storageName, JSON.stringify(this.videoSettings));
+		}
 
 		// 初次打开时，如果 localStorage 中没有设置，立即保存默认设置
 		if (!getLocalSettings(this.config.storageName)) {
@@ -885,6 +889,7 @@ class Player {
 		if (danmakuConfig['fontfamily'] === 'custom') {
 			danmakuConfig['fontfamily'] = danmakuConfig['fontfamilycustom'];
 		}
+		danmakuConfig['fontfamily'] = getDanmakuFontFamily(danmakuConfig['fontfamily']);
 		// danmakuConfig['preventshade'] = false;
 
 		this.multipleDanmakuDebug = {
@@ -976,9 +981,11 @@ class Player {
 					if (type === 'setting_config' && this.danmaku && this.danmaku.option) {
 						// 目前没法引用，特殊处理
 						if (key === 'fontfamilycustom') {
-							this.danmaku.option('fontfamily', value);
+							this.danmaku.option('fontfamily', getDanmakuFontFamily(value));
 						} else if (key === 'fontfamily' && value === 'custom') {
-							this.danmaku.option('fontfamily', this.videoSettings[type]['fontfamilycustom']);
+							this.danmaku.option('fontfamily', getDanmakuFontFamily(this.videoSettings[type]['fontfamilycustom']));
+						} else if (key === 'fontfamily') {
+							this.danmaku.option('fontfamily', getDanmakuFontFamily(value));
 						} else if (key === 'type') {
 							this.danmaku.option(key, value);
 							// this.danmakuSetting.danmakuMask && this.danmakuSetting.danmakuMask.changeContainer();

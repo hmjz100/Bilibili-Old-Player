@@ -9,7 +9,7 @@ import { getLocalSettings, setLocalSettings } from '@shared/utils';
 import Player from '../../player';
 import PanoramicManager from '../panoramic-manager';
 import SessionController from '../session-controller';
-import BILIBILI_PLAYER_SETTINGS from '../settings';
+import BILIBILI_PLAYER_SETTINGS, { DANMAKU_FONT_FALLBACK, getDanmakuFontFamily } from '../settings';
 import STATE from '../state';
 
 export interface ISettingType {
@@ -313,6 +313,7 @@ class Setting {
                     if (value === "custom") {
                         value = player.videoSettings.setting_config.fontfamilycustom;
                     }
+                    value = getDanmakuFontFamily(value);
                     $("." + player.prefix).find("*").not("[class$=\"-danmaku\"] *").not("[class$=\"-danmaku\"]").css("font-family", value);
                     $("<style type=\"text/css\" class=\"tooltips-style\">." + player.prefix + "-tooltips{font-family:" + value + "}</style>"
                     ).appendTo($("body"))
@@ -772,9 +773,19 @@ class Setting {
         }
         Object.keys(this.settingItem).forEach(d => {
             if (settings.hasOwnProperty(d)) {
-                (<any>this).settingItem?.[d].value(settings[d], false);
+                const value = d === 'fontfamilycustom'
+                    ? settings[d] || DANMAKU_FONT_FALLBACK
+                    : settings[d];
+                (<any>this).settingItem?.[d].value(value, false);
             }
         });
+        if (this.settingItem.fontfamilycustom) {
+            if (settings.fontfamily === 'custom') {
+                this.settingItem.fontfamilycustom.show();
+            } else {
+                this.settingItem.fontfamilycustom.hide();
+            }
+        }
     }
 }
 
