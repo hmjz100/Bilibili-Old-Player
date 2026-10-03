@@ -277,11 +277,7 @@ class Setting {
             ],
             change: (e: IEvent) => {
                 player.set('setting_config', 'fontfamily', e.value);
-                if (e.value === "custom") {
-                    this.settingItem.fontfamilycustom!.css("display", "block");
-                } else {
-                    this.settingItem.fontfamilycustom!.hide();
-                }
+                this.updateFontFamilyCustomVisibility(e.value);
             }
         });
         this.settingItem.fontfamilycustom = setting.find(prefix + "fontfamilycustom").change(function () {
@@ -676,7 +672,7 @@ class Setting {
 			<div class="${this.prefix}-panel-label">弹幕字体</div>
 			<div class="${this.prefix}-panel-setting">
 				<div class="${this.prefix}-setting-fontfamily"></div>
-				<input class="${this.prefix}-setting-fontfamilycustom" />
+				<input class="${this.prefix}-setting-fontfamilycustom" style="display: ${this.player.videoSettings.setting_config.fontfamily === 'custom' ? 'block' : 'none'}" />
 			</div>
 		</div>
 		<div class="${this.prefix}-panel-content">
@@ -767,6 +763,9 @@ class Setting {
             });
         });
     }
+    private updateFontFamilyCustomVisibility(fontFamily = this.settingItem.fontfamily?.value()) {
+        this.settingItem.fontfamilycustom?.css('display', fontFamily === 'custom' ? 'block' : 'none');
+    }
     set(settings: any, reset?: boolean) {
         if (!this.initalized) {
             this.init();
@@ -779,13 +778,7 @@ class Setting {
                 (<any>this).settingItem?.[d].value(value, false);
             }
         });
-        if (this.settingItem.fontfamilycustom) {
-            if (settings.fontfamily === 'custom') {
-                this.settingItem.fontfamilycustom.show();
-            } else {
-                this.settingItem.fontfamilycustom.hide();
-            }
-        }
+        this.updateFontFamilyCustomVisibility();
     }
 }
 
