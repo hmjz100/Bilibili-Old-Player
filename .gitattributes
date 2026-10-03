@@ -1,9 +1,10 @@
 dist/**/* linguist-generated=true
-*.ts text working-tree-encoding=UTF-8 eol=crlf tabwidth=4
-*.json text working-tree-encoding=UTF-8 eol=crlf tabwidth=4
-*.yaml text working-tree-encoding=UTF-8 eol=crlf tabwidth=4
+*.jpg binary
+*.png binary
+*.gif binary
 *.ttf binary
 *.otf binary
 *.woff binary
 *.woff2 binary
 *.eot binary
+* text working-tree-encoding=UTF-8 eol=crlf tabwidth=4
