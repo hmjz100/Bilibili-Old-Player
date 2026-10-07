@@ -30,6 +30,12 @@
 	/** 本地文件的 object URL（切换文件时要释放） */
 	var localObjectURL = '';
 
+	/** 已载入的弹幕（解析成播放器要的 IDmData 形状后缓存，换源时重新装入） */
+	var danmaku = {
+		items: [],
+		name: '',
+	};
+
 	var statusNode = null;
 
 	function setStatus(text, kind) {
@@ -214,9 +220,11 @@
 		};
 	}
 
-	/** 把合成数据当作接口应答塞回 XHR */
+	/** 把合成数据当作接口应答塞回 XHR（支持 json 与 protobuf/ArrayBuffer） */
 	function respond(xhr, body) {
-		var text = JSON.stringify(body);
+		var binary = body instanceof ArrayBuffer;
+		var text = binary ? '' : JSON.stringify(body);
+		var mime = binary ? 'application/octet-stream' : 'application/json';
 		var define = function (key, value) {
 			try {
 				Object.defineProperty(xhr, key, { configurable: true, value: value });
@@ -229,12 +237,15 @@
 		define('statusText', 'OK');
 		define('responseURL', xhr.__demoURL || '');
 		define('responseText', text);
-		define('response', xhr.responseType === 'json' ? body : text);
+		define(
+			'response',
+			binary ? (xhr.responseType === 'arraybuffer' ? body : new Uint8Array(body)) : xhr.responseType === 'json' ? body : text,
+		);
 		xhr.getAllResponseHeaders = function () {
-			return 'content-type: application/json\r\n';
+			return 'content-type: ' + mime + '\r\n';
 		};
 		xhr.getResponseHeader = function (name) {
-			return String(name).toLowerCase() === 'content-type' ? 'application/json' : null;
+			return String(name).toLowerCase() === 'content-type' ? mime : null;
 		};
 		setTimeout(function () {
 			try {
@@ -258,6 +269,13 @@
 			return buildPlayurl(state.url, state.type, state.duration, qn ? Number(qn[1]) : 0);
 		};
 		var route = function (url, payload) {
+			// 弹幕：用本地弹幕（xml/json）编码成播放器要的 protobuf 应答
+			if (/dm\/web\/seg\.so/i.test(url)) {
+				return encodeDanmakuSeg(danmaku.items);
+			}
+			if (/dm\/web\/view/i.test(url)) {
+				return encodeDmView(danmaku.items.length);
+			}
 			if (/player\/(wbi\/)?playurl/i.test(url)) {
 				return playurlAnswer(url, payload);
 			}
@@ -427,6 +445,210 @@
 		}
 	}
 
+	/* ==================== 弹幕（xml / json） ==================== */
+
+	/** 把 B 站经典 xml 弹幕解析成播放器要的 IDmData 形状 */
+	function parseDanmakuXml(text) {
+		var clean = text.replace(/[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]/g, '');
+		var doc = new DOMParser().parseFromString(clean, 'text/xml');
+		if (doc.getElementsByTagName('parsererror').length) {
+			throw new Error('XML 解析失败');
+		}
+		var nodes = doc.getElementsByTagName('d');
+		var list = [];
+		for (var i = 0; i < nodes.length; i++) {
+			var p = (nodes[i].getAttribute('p') || '').split(',');
+			if (p.length < 4) {
+				continue;
+			}
+			list.push({
+				progress: Math.round(parseFloat(p[0]) * 1000) || 0,
+				mode: Number(p[1]) || 1,
+				fontsize: Number(p[2]) || 25,
+				color: Number(p[3]) || 16777215,
+				ctime: Number(p[4]) || 0,
+				pool: Number(p[5]) || 0,
+				midHash: p[6] || '',
+				idStr: p[7] || '',
+				weight: Number(p[8]) || 10,
+				attr: 0,
+				id: i + 1,
+				content: nodes[i].textContent || '',
+			});
+		}
+		return list;
+	}
+
+	/** json 弹幕：兼容 {elems:[]}、{data:{elems:[]}} 与顶层数组，字段名也做兼容 */
+	function parseDanmakuJson(text) {
+		var raw = JSON.parse(text);
+		var arr = Array.isArray(raw)
+			? raw
+			: raw.elems || (raw.data && (raw.data.elems || raw.data.danmaku)) || raw.danmaku || [];
+		if (!Array.isArray(arr)) {
+			throw new Error('JSON 里没找到弹幕数组（支持 elems 或顶层数组）');
+		}
+		return arr.map(function (it, i) {
+			it = it || {};
+			var seconds =
+				it.progress !== undefined
+					? Number(it.progress) / 1000
+					: Number(it.time !== undefined ? it.time : it.stime) || 0;
+			return {
+				progress: Math.round(seconds * 1000),
+				mode: Number(it.mode !== undefined ? it.mode : it.type) || 1,
+				fontsize: Number(it.fontsize !== undefined ? it.fontsize : it.size) || 25,
+				color: Number(it.color) || 16777215,
+				ctime: Number(it.ctime !== undefined ? it.ctime : it.date) || 0,
+				pool: Number(it.pool) || 0,
+				midHash: it.midHash || it.uhash || it.uid || '',
+				idStr: it.idStr || it.dmid || (it.id !== undefined ? String(it.id) : ''),
+				weight: Number(it.weight) || 10,
+				attr: 0,
+				id: i + 1,
+				content: String(it.content !== undefined ? it.content : it.text !== undefined ? it.text : it.m || ''),
+			};
+		});
+	}
+
+	/* ---------- 极简 protobuf 编码（把弹幕喂给播放器内部解码器） ----------
+	 * 播放器的弹幕来自 /x/v2/dm/web/seg.so（protobuf，DmSegMobileReply），
+	 * 它内部用 const/dm.json 的 schema 解码，这里按同一 schema 编码即可。
+	 */
+	function pbVarint(bytes, value) {
+		value = Math.max(0, Math.round(value) || 0);
+		while (value > 127) {
+			bytes.push((value & 127) | 128);
+			value = Math.floor(value / 128);
+		}
+		bytes.push(value & 127);
+	}
+
+	function pbTag(bytes, field, wire) {
+		pbVarint(bytes, field * 8 + wire);
+	}
+
+	function pbInt(bytes, field, value) {
+		pbTag(bytes, field, 0);
+		pbVarint(bytes, value);
+	}
+
+	function pbStr(bytes, field, value) {
+		value = String(value == null ? '' : value);
+		var arr = [];
+		for (var i = 0; i < value.length; i++) {
+			var c = value.charCodeAt(i);
+			if (c < 0x80) {
+				arr.push(c);
+			} else if (c < 0x800) {
+				arr.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+			} else if (c >= 0xd800 && c <= 0xdbff && i + 1 < value.length) {
+				var c2 = value.charCodeAt(++i);
+				var cp = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
+				arr.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+			} else {
+				arr.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+			}
+		}
+		pbTag(bytes, field, 2);
+		pbVarint(bytes, arr.length);
+		for (var k = 0; k < arr.length; k++) {
+			bytes.push(arr[k]);
+		}
+	}
+
+	function pbMsg(bytes, field, inner) {
+		pbTag(bytes, field, 2);
+		pbVarint(bytes, inner.length);
+		for (var i = 0; i < inner.length; i++) {
+			bytes.push(inner[i]);
+		}
+	}
+
+	/** DanmakuElem：1 id、2 progress(ms)、3 mode、4 fontsize、5 color、6 midHash、7 content、8 ctime、9 weight、11 pool、12 idStr */
+	function encodeDanmakuElem(it) {
+		var b = [];
+		pbInt(b, 1, it.id);
+		pbInt(b, 2, it.progress);
+		pbInt(b, 3, it.mode);
+		pbInt(b, 4, it.fontsize);
+		pbInt(b, 5, it.color);
+		pbStr(b, 6, it.midHash);
+		pbStr(b, 7, it.content);
+		pbInt(b, 8, it.ctime);
+		pbInt(b, 9, it.weight);
+		pbInt(b, 11, it.pool);
+		pbStr(b, 12, it.idStr);
+		return b;
+	}
+
+	/** DmSegMobileReply：repeated DanmakuElem elems = 1 */
+	function encodeDanmakuSeg(items) {
+		var out = [];
+		items.forEach(function (it) {
+			pbMsg(out, 1, encodeDanmakuElem(it));
+		});
+		return new Uint8Array(out).buffer;
+	}
+
+	/** DmWebViewReply：1 state、2 text、4 dmSge(DmSegConfig)、8 count */
+	function encodeDmView(count) {
+		var b = [];
+		pbInt(b, 1, 0);
+		pbStr(b, 2, '演示弹幕');
+		pbInt(b, 8, count);
+		var sge = [];
+		pbInt(sge, 1, 6000);
+		pbInt(sge, 2, 1);
+		pbMsg(b, 4, sge);
+		return new Uint8Array(b).buffer;
+	}
+
+	/** 读取弹幕文件（.xml / .json），解析后让播放器重新拉取弹幕 */
+	function setDanmakuFromFile(file) {
+		if (!file) {
+			return;
+		}
+		var name = file.name || 'danmaku';
+		var isJson = /\.json$/i.test(name);
+		setStatus('正在读取弹幕文件：' + name + ' …');
+		file.text()
+			.then(function (text) {
+				var items = isJson ? parseDanmakuJson(text) : parseDanmakuXml(text);
+				if (!items.length) {
+					setStatus('弹幕文件里没有解析到弹幕：' + name, 'warn');
+					return;
+				}
+				danmaku.items = items;
+				danmaku.name = name;
+				if (!state.url) {
+					setStatus('弹幕已就绪（' + items.length + ' 条），播放视频时会自动装入', 'ok');
+					return;
+				}
+				// 播放器的弹幕只在初始化时拉取，所以重新起播一次让它带上弹幕
+				var at = 0;
+				try {
+					at = window.player && window.player.getCurrentTime ? window.player.getCurrentTime() : 0;
+				} catch (e) {
+					at = 0;
+				}
+				setStatus('已解析 ' + items.length + ' 条弹幕（' + name + '），正在重新载入播放器…');
+				boot();
+				if (at > 1) {
+					setTimeout(function () {
+						try {
+							window.player.seek(at);
+						} catch (e) {
+							/* 忽略 */
+						}
+					}, 6000);
+				}
+			})
+			.catch(function (e) {
+				setStatus('弹幕文件读取或解析失败：' + (e && e.message ? e.message : e), 'error');
+			});
+	}
+
 	function boot() {
 		var url = state.url;
 		var type = state.type;
@@ -540,6 +762,11 @@
 		if (!file) {
 			return;
 		}
+		// 弹幕文件（.xml / .json）走弹幕通道，不要当成视频
+		if (/\.(xml|json)$/i.test(file.name || '')) {
+			setDanmakuFromFile(file);
+			return;
+		}
 		if (localObjectURL) {
 			try {
 				URL.revokeObjectURL(localObjectURL);
@@ -553,6 +780,9 @@
 		// 本地文件不需要写回地址框，避免把文件名当成地址
 		startPlayback(localObjectURL, type);
 	};
+
+	/** 只加载弹幕文件（页面上的“选择弹幕”按钮走这里） */
+	window.demoPlayerDanmakuFile = setDanmakuFromFile;
 
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', start);

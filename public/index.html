@@ -199,15 +199,17 @@
 			</select>
 			<button id="demo-play" class="primary" type="button">播放</button>
 			<button id="demo-pick" type="button">选择本地文件</button>
+			<button id="demo-dm" type="button">选择弹幕文件</button>
 			<input id="demo-file" type="file" hidden
 				accept="video/*,audio/*,.mp4,.m4v,.mov,.flv,.m3u8,.ts,.mkv,.webm,.mp3,.m4a,.aac,.flac,.wav,.opus">
+			<input id="demo-dm-file" type="file" hidden accept=".xml,.json,application/xml,application/json">
 		</div>
 
 		<div class="samples">
 			<span>示例：</span>
 			<button type="button" data-url="https://www.w3schools.com/html/mov_bbb.mp4">mp4</button>
 			<button type="button" data-url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">m3u8</button>
-			<span>（也可以把本地文件拖到播放器区域）</span>
+			<span>（弹幕支持 B 站 xml 与 json，视频与弹幕文件都可以拖进播放器区域）</span>
 		</div>
 
 		<p id="demo-status" class="demo-status">正在准备…</p>
@@ -233,6 +235,8 @@
 			var play = document.getElementById('demo-play');
 			var pick = document.getElementById('demo-pick');
 			var file = document.getElementById('demo-file');
+			var dmPick = document.getElementById('demo-dm');
+			var dmFile = document.getElementById('demo-dm-file');
 			var playerBox = document.getElementById('demo-player');
 
 			play.addEventListener('click', function () {
@@ -252,6 +256,14 @@
 			file.addEventListener('change', function () {
 				if (file.files && file.files[0]) {
 					window.demoPlayerLocalFile(file.files[0]);
+				}
+			});
+			dmPick.addEventListener('click', function () {
+				dmFile.click();
+			});
+			dmFile.addEventListener('change', function () {
+				if (dmFile.files && dmFile.files[0]) {
+					window.demoPlayerDanmakuFile(dmFile.files[0]);
 				}
 			});
 			Array.prototype.forEach.call(document.querySelectorAll('.samples button'), function (btn) {
