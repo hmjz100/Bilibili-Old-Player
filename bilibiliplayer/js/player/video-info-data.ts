@@ -299,6 +299,11 @@ const updateVideoInfoData = (
         streamHost = '';
         streamType = '';
     }
+    // 本地文件（演示页选择/拖入的文件）是 blob: 地址，没有真实主机，统一标成「本地」
+    if (!streamHost && /^blob:|^data:|^file:/i.test(String(statInfo['url'] || statInfo['videoURL'] || ''))) {
+        streamHost = '本地';
+        streamType = '本地';
+    }
 
     let droppedFrames = statInfo['droppedFrames'] + ' / ' + statInfo['decodedFrames'];
 

@@ -28,6 +28,9 @@
 		/** 本地文件时保留 File 引用，便于直接切片读元数据（flv 时长） */
 		source: null,
 		size: 0,
+		/** 探测到的原始分辨率，用来映射画质名称 */
+		width: 0,
+		height: 0,
 	};
 
 	/** 本地文件的 object URL（切换文件时要释放） */
@@ -121,6 +124,18 @@
 				for (var i = 0; i < u8.length; i++) {
 					text += String.fromCharCode(u8[i]);
 				}
+				var grab = function (key) {
+					var pos = text.indexOf(key);
+					if (pos > 0 && pos + 9 <= u8.length - 8) {
+						var v = new DataView(buf).getFloat64(pos + 9);
+						if (isFinite(v) && v > 0 && v < 100000) {
+							return Math.round(v);
+						}
+					}
+					return 0;
+				};
+				state.width = grab('width');
+				state.height = grab('height');
 				var at = text.indexOf('duration');
 				if (at > 0 && at + 9 <= u8.length - 8) {
 					var val = new DataView(buf).getFloat64(at + 9);
@@ -177,6 +192,8 @@
 			video.preload = 'metadata';
 			video.muted = true;
 			video.onloadedmetadata = function () {
+				state.width = video.videoWidth || 0;
+				state.height = video.videoHeight || 0;
 				done(isFinite(video.duration) ? video.duration : 0);
 			};
 			video.onerror = function () {
@@ -198,10 +215,25 @@
 	 *   format         必须与 flvjs 能力匹配：flv 时不能含 mp4，mp4 时必须含 mp4；
 	 *   durl[]         url / length(毫秒) / size / backup_url。
 	 */
+	/** 按视频原始分辨率映射到 B 站画质档位与名称 */
+	function qualityForSize(height) {
+		var h = height || 0;
+		if (h >= 2160) return { id: 120, label: '4K 超清' };
+		if (h >= 1440) return { id: 112, label: '2K 超清' };
+		if (h >= 1080) return { id: 80, label: '1080P 高清' };
+		if (h >= 720) return { id: 64, label: '720P 高清' };
+		if (h >= 480) return { id: 32, label: '480P 清晰' };
+		if (h >= 360) return { id: 16, label: '360P 流畅' };
+		return { id: 6, label: '240P 极速' };
+	}
+
 	function buildPlayurl(url, type, durationSec, quality) {
 		var isFlv = type === 'flv';
 		var format = isFlv ? 'flv' : 'mp4';
 		var durationMs = Math.round((durationSec || 0) * 1000);
+		var q = qualityForSize(state.height);
+		var qn = quality || q.id;
+		var qname = q.label;
 		return {
 			code: 0,
 			message: '0',
@@ -209,18 +241,18 @@
 			data: {
 				from: 'local',
 				result: 'suee',
-				quality: quality || 80,
+				quality: qn,
 				format: format,
 				timelength: durationMs,
 				accept_format: format,
-				accept_quality: [quality || 80],
-				accept_description: ['高清 1080P'],
+				accept_quality: [qn],
+				accept_description: [qname],
 				support_formats: [
 					{
-						quality: quality || 80,
+						quality: qn,
 						format: format,
-						new_description: '1080P',
-						display_desc: '1080P',
+						new_description: qname,
+						display_desc: qname,
 						superscript: '',
 						codecs: [],
 					},
@@ -349,6 +381,23 @@
 			}
 			if (/web-interface\/view/i.test(url)) {
 				return { code: 0, message: '0', ttl: 1, data: window.__INITIAL_STATE__.videoData };
+			}
+			// 下面这几个接口在演示环境里必然打不通，播放器会反复重试（拖慢页面），
+			// 所以直接给出「接口明确说不行」的正常 HTTP 应答，让它别再重试
+			if (/player\/(wbi\/)?v2/i.test(url)) {
+				return { code: -404, message: '演示模式：无登录态' };
+			}
+			if (/click-interface\/web\/heartbeat/i.test(url)) {
+				return { code: 0, message: '0', data: {} };
+			}
+			if (/web-interface\/broadcast\/servers/i.test(url)) {
+				return { code: 0, message: '0', data: { servers: [] } };
+			}
+			if (/player\/pagelist/i.test(url)) {
+				return { code: 0, message: '0', data: window.__INITIAL_STATE__.videoData.pages };
+			}
+			if (/dm\/filter\/user/i.test(url)) {
+				return { code: 0, message: '0', data: { rule: '', type: [] } };
 			}
 			return null;
 		};
@@ -530,20 +579,39 @@
 			if (p.length < 4) {
 				continue;
 			}
-			list.push({
-				progress: Math.round(parseFloat(p[0]) * 1000) || 0,
-				mode: Number(p[1]) || 1,
-				fontsize: Number(p[2]) || 25,
-				color: Number(p[3]) || 16777215,
-				ctime: Number(p[4]) || 0,
-				pool: Number(p[5]) || 0,
-				midHash: p[6] || '',
-				idStr: p[7] || '',
-				weight: Number(p[8]) || 10,
-				attr: 0,
-				id: i + 1,
-				content: nodes[i].textContent || '',
-			});
+			var item;
+			if (Number(p[0]) > 1e9) {
+				// 变体格式：dmid, ?, 进度(毫秒), mode, 字号, 颜色, 时间戳, 弹幕池, midHash
+				// 例：<d p="39000861616111621,0,36619,1,25,16777215,1601530082,0,ce06ff22">b站nb</d>
+				item = {
+					progress: Number(p[2]) || 0,
+					mode: Number(p[3]) || 1,
+					fontsize: Number(p[4]) || 25,
+					color: Number(p[5]) || 16777215,
+					ctime: Number(p[6]) || 0,
+					pool: Number(p[7]) || 0,
+					midHash: p[8] || '',
+					idStr: p[0],
+					weight: Number(p[9]) || 10,
+				};
+			} else {
+				// 经典格式：时间(秒), mode, 字号, 颜色, 时间戳, 弹幕池, midHash, dmid, 权重
+				item = {
+					progress: Math.round(parseFloat(p[0]) * 1000) || 0,
+					mode: Number(p[1]) || 1,
+					fontsize: Number(p[2]) || 25,
+					color: Number(p[3]) || 16777215,
+					ctime: Number(p[4]) || 0,
+					pool: Number(p[5]) || 0,
+					midHash: p[6] || '',
+					idStr: p[7] || '',
+					weight: Number(p[8]) || 10,
+				};
+			}
+			item.attr = 0;
+			item.id = i + 1;
+			item.content = nodes[i].textContent || '';
+			list.push(item);
 		}
 		return list;
 	}

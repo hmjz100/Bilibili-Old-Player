@@ -116,7 +116,7 @@ export default <BILIBILI_PLAYER_SETTINGS>{
         speedsync: false,
         fontsize: 1,
         fullscreensync: false,
-        danmakuArea: 0,
+        danmakuArea: 1,
         fullscreensend: false,
         defquality: 0,
         sameaspanel: false,
