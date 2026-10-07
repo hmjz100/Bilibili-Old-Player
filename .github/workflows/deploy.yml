@@ -1,4 +1,4 @@
-name: 部署演示页到 GitHub Pages
+name: 部署演示页
 
 on:
   workflow_dispatch:

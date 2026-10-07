@@ -31,7 +31,7 @@ importers:
         version: file:bas-danmaku
       '@jsc/bilibiliplayer':
         specifier: file:bilibiliplayer
-        version: link:bilibiliplayer
+        version: file:bilibiliplayer
       '@jsc/combo':
         specifier: file:combo
         version: link:combo
@@ -49,7 +49,7 @@ importers:
         version: link:event-log
       '@jsc/flv.js':
         specifier: file:flv.js
-        version: link:flv.js
+        version: file:flv.js
       '@jsc/must-h5':
         specifier: file:must-h5
         version: link:must-h5
@@ -64,7 +64,7 @@ importers:
         version: link:pbploader
       '@jsc/player-auxiliary':
         specifier: file:player-auxiliary
-        version: link:player-auxiliary
+        version: file:player-auxiliary
       '@jsc/playurl':
         specifier: file:playurl
         version: link:playurl
@@ -82,7 +82,7 @@ importers:
         version: link:websocket-broadcast
       '@shared/utils':
         specifier: file:shared
-        version: link:shared
+        version: file:shared
       axios:
         specifier: ^1.18.0
         version: 1.20.0(debug@4.4.3)
@@ -123,9 +123,6 @@ importers:
       esbuild:
         specifier: ^0.28.1
         version: 0.28.2
-      hls.js:
-        specifier: ^1.7.3
-        version: 1.7.3
       reverse-sourcemap:
         specifier: ^1.0.4
         version: 1.0.4
@@ -406,11 +403,23 @@ packages:
   '@jsc/bas-danmaku@file:bas-danmaku':
     resolution: {directory: bas-danmaku, type: directory}
 
+  '@jsc/bilibiliplayer@file:bilibiliplayer':
+    resolution: {directory: bilibiliplayer, type: directory}
+
+  '@jsc/flv.js@file:flv.js':
+    resolution: {directory: flv.js, type: directory}
+
+  '@jsc/player-auxiliary@file:player-auxiliary':
+    resolution: {directory: player-auxiliary, type: directory}
+
   '@popmotion/easing@1.0.2':
     resolution: {integrity: sha512-IkdW0TNmRnWTeWI7aGQIVDbKXPWHVEYdGgd5ZR4SH/Ty/61p63jCjrPxX1XrR7IGkl08bjhJROStD7j+RKgoIw==}
 
   '@popmotion/popcorn@0.4.4':
     resolution: {integrity: sha512-jYO/8319fKoNLMlY4ZJPiPu8Ea8occYwRZhxpaNn/kZsK4QG2E7XFlXZMJBsTWDw7I1i0uaqyC4zn1nwEezLzg==}
+
+  '@shared/utils@file:shared':
+    resolution: {directory: shared, type: directory}
 
   '@tweenjs/tween.js@23.1.3':
     resolution: {integrity: sha512-vJmvvwFxYuGnF2axRtPYocag6Clbb5YS7kLL+SO/TeVFzHqDIWrNKYtcsPMibjDx9O+bu+psAy9NKfWklassUA==}
@@ -600,9 +609,6 @@ packages:
 
   hey-listen@1.0.8:
     resolution: {integrity: sha512-COpmrF2NOg4TBWUJ5UVyaCU2A88wEMkUPK4hNqyCkqHbxT92BbvfjoSozkAIIm6XhicGlJHhFdullInrdhwU8Q==}
-
-  hls.js@1.7.3:
-    resolution: {integrity: sha512-MsPlx6yVW4Qv4C7mEVou4/gk/5cN2dVxOTnrNjPSmyH2f0Ln+/UkG10Ax1PE6OvrmTVPKgQYozTtBaPOuCzq7A==}
 
   https-proxy-agent@5.0.1:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
@@ -862,6 +868,25 @@ snapshots:
 
   '@jsc/bas-danmaku@file:bas-danmaku': {}
 
+  '@jsc/bilibiliplayer@file:bilibiliplayer':
+    dependencies:
+      hammerjs: 2.0.8
+      jszip: 3.10.2
+      konva: 8.4.3
+      pako: 2.2.0
+      popmotion: 11.0.5
+      stylefire: 7.0.3
+      three: 0.186.1
+
+  '@jsc/flv.js@file:flv.js':
+    dependencies:
+      buffer: 6.0.3
+
+  '@jsc/player-auxiliary@file:player-auxiliary':
+    dependencies:
+      clipboard: 2.0.11
+      underscore: 1.13.8
+
   '@popmotion/easing@1.0.2': {}
 
   '@popmotion/popcorn@0.4.4':
@@ -871,6 +896,11 @@ snapshots:
       hey-listen: 1.0.8
       style-value-types: 3.2.0
       tslib: 1.14.1
+
+  '@shared/utils@file:shared':
+    dependencies:
+      events: 3.3.0
+      md5: 2.3.0
 
   '@tweenjs/tween.js@23.1.3': {}
 
@@ -1088,8 +1118,6 @@ snapshots:
       function-bind: 1.1.2
 
   hey-listen@1.0.8: {}
-
-  hls.js@1.7.3: {}
 
   https-proxy-agent@5.0.1:
     dependencies:

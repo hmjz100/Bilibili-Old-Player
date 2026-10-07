@@ -4,13 +4,13 @@
  * 播放器并不接受「视频直链」这种参数：它要的是一份 B 站的 playurl 数据。
  * 所以这个脚本负责把用户给的直链「包装」成播放器认识的世界：
  *
- *   1. 判定地址类型（mp4 / flv / m3u8，也支持手动指定）；
+ *   1. 判定地址类型（mp4 / flv，也支持手动指定）；
  *   2. 合成 playurl（渐进式 durl）与视频元数据 __INITIAL_STATE__；
  *   3. 拦截播放器发出的 playurl 接口请求，直接喂回合成数据
  *      （这样画质切换、重新载入等后续请求也不会打到 B 站接口上）；
- *   4. 按类型调整 flvjs 能力：mp4 / m3u8 时让 flvjs.isSupported() 返回 false，
+ *   4. 按类型调整 flvjs 能力：mp4 时让 flvjs.isSupported() 返回 false，
  *      迫使播放器走「原生 video」链路（播放器构造函数里就是这么判定的）；
- *   5. 启动播放器；m3u8 播放器本身不支持，额外交给 hls.js 接管它建出来的 video 元素。
+ *   5. 启动播放器。
  */
 (function () {
 	'use strict';
@@ -42,18 +42,30 @@
 		name: '',
 	};
 
-	var statusNode = null;
-
+	/**
+	 * 只在需要提醒用户时（出错 / 用法不对）从顶部弹出提示条；
+	 * 正常流程的信息不再打扰用户，点提示条右侧的 ✕ 或 demoPlayerCloseError() 可关闭。
+	 */
 	function setStatus(text, kind) {
-		if (!statusNode) {
-			statusNode = document.getElementById('demo-status');
-		}
-		if (!statusNode) {
+		if (kind !== 'error' && kind !== 'warn') {
 			return;
 		}
-		statusNode.textContent = text;
-		statusNode.className = 'demo-status' + (kind ? ' demo-status-' + kind : '');
+		var box = document.getElementById('demo-error');
+		var label = document.getElementById('demo-error-text');
+		if (!box || !label) {
+			return;
+		}
+		label.textContent = text;
+		box.hidden = false;
 	}
+
+	/** 关闭顶部提示条 */
+	window.demoPlayerCloseError = function () {
+		var box = document.getElementById('demo-error');
+		if (box) {
+			box.hidden = true;
+		}
+	};
 
 	function getParam(name) {
 		var search = window.location.search.replace(/^\?/, '');
@@ -72,18 +84,11 @@
 	}
 
 	/**
-	 * 从地址与手动选择推断类型
-	 * @param {string} url 视频地址
-	 * @param {string} forced 手动指定的类型（auto / mp4 / flv / m3u8）
+	 * 按地址（或本地文件名）自动推断类型
+	 * @param {string} url 视频地址或文件名
 	 */
-	function guessType(url, forced) {
-		if (forced && forced !== 'auto') {
-			return forced;
-		}
+	function guessType(url) {
 		var path = url.split('#')[0].split('?')[0].toLowerCase();
-		if (/\.m3u8?$/.test(path)) {
-			return 'm3u8';
-		}
 		if (/\.flv$/.test(path)) {
 			return 'flv';
 		}
@@ -93,9 +98,6 @@
 		// 没有扩展名时按查询参数猜一把，最后默认 mp4
 		if (/[?&](type|format)=flv/.test(url)) {
 			return 'flv';
-		}
-		if (/[?&](type|format)=(m3u8|hls)/.test(url)) {
-			return 'm3u8';
 		}
 		return 'mp4';
 	}
@@ -215,15 +217,29 @@
 	 *   format         必须与 flvjs 能力匹配：flv 时不能含 mp4，mp4 时必须含 mp4；
 	 *   durl[]         url / length(毫秒) / size / backup_url。
 	 */
-	/** 按视频原始分辨率映射到 B 站画质档位与名称 */
-	function qualityForSize(height) {
-		var h = height || 0;
-		if (h >= 2160) return { id: 120, label: '4K 超清' };
-		if (h >= 1440) return { id: 112, label: '2K 超清' };
-		if (h >= 1080) return { id: 80, label: '1080P 高清' };
-		if (h >= 720) return { id: 64, label: '720P 高清' };
-		if (h >= 480) return { id: 32, label: '480P 清晰' };
-		if (h >= 360) return { id: 16, label: '360P 流畅' };
+	/** 按视频原始分辨率映射到 B 站画质档位与名称
+	 *  按「长边」判断：4K 也可能是 3840×1920 这类非 16:9 比例，竖屏视频也能正确归类
+	 */
+	function qualityForSize(width, height) {
+		var edge = Math.max(width || 0, height || 0);
+		if (edge >= 3840) {
+			return { id: 120, label: '4K 超清' };
+		}
+		if (edge >= 2560) {
+			return { id: 112, label: '2K 超清' };
+		}
+		if (edge >= 1920) {
+			return { id: 80, label: '1080P 高清' };
+		}
+		if (edge >= 1280) {
+			return { id: 64, label: '720P 高清' };
+		}
+		if (edge >= 854) {
+			return { id: 32, label: '480P 清晰' };
+		}
+		if (edge >= 640) {
+			return { id: 16, label: '360P 流畅' };
+		}
 		return { id: 6, label: '240P 极速' };
 	}
 
@@ -231,7 +247,7 @@
 		var isFlv = type === 'flv';
 		var format = isFlv ? 'flv' : 'mp4';
 		var durationMs = Math.round((durationSec || 0) * 1000);
-		var q = qualityForSize(state.height);
+		var q = qualityForSize(state.width, state.height);
 		var qn = quality || q.id;
 		var qname = q.label;
 		return {
@@ -324,6 +340,12 @@
 		var binary = body instanceof ArrayBuffer;
 		var text = binary ? '' : JSON.stringify(body);
 		var mime = binary ? 'application/octet-stream' : 'application/json';
+		// JSONP 请求（带 callback=xxx）要把结果包进回调里，否则对方拿不到数据
+		var cb = /[?&]callback=([^&]+)/.exec(xhr.__demoURL || '');
+		if (cb && !binary) {
+			text = decodeURIComponent(cb[1]) + '(' + text + ')';
+			mime = 'text/javascript';
+		}
 		var define = function (key, value) {
 			try {
 				Object.defineProperty(xhr, key, { configurable: true, value: value });
@@ -399,6 +421,32 @@
 			if (/dm\/filter\/user/i.test(url)) {
 				return { code: 0, message: '0', data: { rule: '', type: [] } };
 			}
+			// 下面这些同样是打不通就会不停重试的接口，给「成功但没有数据」的应答
+			if (/comment\.bilibili\.com\/playtag|playtag,/i.test(url)) {
+				return { code: 0, message: '0', data: [] };
+			}
+			if (/player\/online\/total/i.test(url)) {
+				return { code: 0, message: '0', data: { total: '0', count: '0' } };
+			}
+			if (/pbp\/data/i.test(url)) {
+				return { code: -404, message: '演示模式：无高能进度条数据' };
+			}
+			if (/player\/videoshot/i.test(url)) {
+				return { code: -404, message: '演示模式：无缩略图' };
+			}
+			if (/\/x\/v2\/dm\/post/i.test(url)) {
+				return { code: -404, message: '演示模式：不能发送弹幕' };
+			}
+			if (/comment\.bilibili\.com\/recommend/i.test(url)) {
+				return { code: 0, message: '0', data: [] };
+			}
+			// 保底：B 站各域名下没被上面接管的接口，一律给「接口明确说不行」的正常应答，
+			// 避免 CORS 报错与无限重试；媒体文件（flv / mp4 / 分片等）放行，交给播放器自己取
+			var isBiliApi = /bilibili\.com|bilivideo\.com|hdslb\.com|biliapi\.net/i.test(url);
+			var isMediaFile = /\.(flv|mp4|m4s|m4a|mp3|aac|ts|m3u8|mpd|webm|ogg|wav)([?#]|$)/i.test(url);
+			if (isBiliApi && !isMediaFile) {
+				return { code: -404, message: '演示模式：该接口未实现' };
+			}
 			return null;
 		};
 
@@ -425,6 +473,32 @@
 			return originalSend.apply(this, arguments);
 		};
 
+		// 广播服务在演示环境没有可用服务器，直接把这类 WebSocket 静音，避免反复重连刷报错
+		if (typeof window.WebSocket === 'function') {
+			var RealWebSocket = window.WebSocket;
+			var SilentWebSocket = function (url, protocols) {
+				if (/\/sub\?|broadcast|platform=web/.test(String(url))) {
+					return {
+						url: String(url),
+						readyState: 3,
+						close: function () { },
+						send: function () { },
+						addEventListener: function () { },
+						removeEventListener: function () { },
+						dispatchEvent: function () {
+							return false;
+						},
+					};
+				}
+				return protocols ? new RealWebSocket(url, protocols) : new RealWebSocket(url);
+			};
+			SilentWebSocket.prototype = RealWebSocket.prototype;
+			['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'].forEach(function (k) {
+				SilentWebSocket[k] = RealWebSocket[k];
+			});
+			window.WebSocket = SilentWebSocket;
+		}
+
 		// 万一哪条链路用的是 fetch，也一并兜住
 		if (typeof window.fetch === 'function') {
 			var originalFetch = window.fetch.bind(window);
@@ -448,27 +522,8 @@
 		}
 	}
 
-	/** 按需加载 hls.js（只有 m3u8 才需要，避免多余请求） */
-	function loadHls() {
-		return new Promise(function (resolve, reject) {
-			if (window.Hls) {
-				resolve(window.Hls);
-				return;
-			}
-			var script = document.createElement('script');
-			script.src = './vendor/hls.min.js';
-			script.onload = function () {
-				window.Hls ? resolve(window.Hls) : reject(new Error('hls.js 已加载但未挂载全局 Hls'));
-			};
-			script.onerror = function () {
-				reject(new Error('无法加载 ./vendor/hls.min.js（请先执行 node public/build-demo.mjs）'));
-			};
-			document.head.appendChild(script);
-		});
-	}
-
-	/**
-	 * mp4 / m3u8 强制走原生链路
+		/**
+	 * mp4 强制走原生链路
 	 * 播放器构造函数会直接读 window.flvjs.isSupported() 来决定 allowFlv，
 	 * 为 true 时它会按 FLV 去要地址、并拒绝 format 含 mp4 的 playurl。
 	 */
@@ -480,48 +535,7 @@
 		}
 	}
 
-	/** m3u8：用 hls.js 接管播放器建出来的 video 元素 */
-	function attachHls(url) {
-		var waited = 0;
-		var timer = setInterval(function () {
-			waited += 250;
-			var video = document.querySelector('#bilibili-player video') || document.querySelector('#bofqi video') || document.querySelector('.bilibili-player video');
-			if (!video) {
-				if (waited > 20000) {
-					clearInterval(timer);
-					setStatus('没有等到播放器的 video 元素，m3u8 无法接管', 'error');
-				}
-				return;
-			}
-			clearInterval(timer);
-			loadHls()
-				.then(function (Hls) {
-					if (!Hls.isSupported()) {
-						setStatus('当前浏览器不支持 MSE，hls.js 无法播放 m3u8（播放器本身不支持 HLS）', 'error');
-						return;
-					}
-					var hls = new Hls({ enableWorker: true });
-					hls.on(Hls.Events.ERROR, function (event, data) {
-						if (data && data.fatal) {
-							setStatus('HLS 播放错误：' + data.type + ' / ' + data.details, 'error');
-						}
-					});
-					hls.on(Hls.Events.MANIFEST_PARSED, function () {
-						setStatus('m3u8 已由 hls.js 接管播放：' + url, 'ok');
-						var play = video.play();
-						play && play.catch && play.catch(function () { });
-					});
-					hls.loadSource(url);
-					hls.attachMedia(video);
-					window.__demoHls = hls;
-				})
-				.catch(function (e) {
-					setStatus('m3u8 需要 hls.js：' + (e && e.message ? e.message : e), 'error');
-				});
-		}, 250);
-	}
-
-	/**
+		/**
 	 * 换源前先拆掉上一个播放器。
 	 * GrayManager 是单例且有 initialized 守卫，不重置的话第二次 EmbedPlayer 会直接空转，
 	 * 表现就是「换地址/换文件没反应」。
@@ -529,14 +543,6 @@
 	function teardown() {
 		try {
 			window.player && window.player.destroy && window.player.destroy();
-		} catch (e) {
-			/* 忽略 */
-		}
-		try {
-			if (window.__demoHls) {
-				window.__demoHls.destroy();
-				window.__demoHls = null;
-			}
 		} catch (e) {
 			/* 忽略 */
 		}
@@ -567,15 +573,29 @@
 
 	/** 把 B 站经典 xml 弹幕解析成播放器要的 IDmData 形状 */
 	function parseDanmakuXml(text) {
-		var clean = text.replace(/[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]/g, '');
+		// 有些导出的 xml 声明成了 version="2.0"，浏览器只认 1.0 会直接判整份文件解析失败，
+		// 所以先把 xml 声明整段去掉，并清掉 B 站偶尔输出的非法控制字符
+		var clean = String(text)
+			.replace(/^\uFEFF/, '')
+			.replace(/[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]/g, '')
+			.replace(/<\?xml[\s\S]*?\?>/i, '');
 		var doc = new DOMParser().parseFromString(clean, 'text/xml');
-		if (doc.getElementsByTagName('parsererror').length) {
-			throw new Error('XML 解析失败');
-		}
 		var nodes = doc.getElementsByTagName('d');
-		var list = [];
+		var parsed = [];
 		for (var i = 0; i < nodes.length; i++) {
-			var p = (nodes[i].getAttribute('p') || '').split(',');
+			parsed.push({ p: nodes[i].getAttribute('p') || '', content: nodes[i].textContent || '' });
+		}
+		if (!parsed.length) {
+			// DOMParser 仍失败时退化成正则抽取（<d p="...">文本</d>）
+			var re = /<d\s+[^>]*\bp\s*=\s*"([^"]*)"[^>]*>([\s\S]*?)<\/d>/gi;
+			var m;
+			while ((m = re.exec(clean))) {
+				parsed.push({ p: m[1], content: m[2].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1') });
+			}
+		}
+		var list = [];
+		for (var k = 0; k < parsed.length; k++) {
+			var p = String(parsed[k].p).split(',');
 			if (p.length < 4) {
 				continue;
 			}
@@ -609,8 +629,8 @@
 				};
 			}
 			item.attr = 0;
-			item.id = i + 1;
-			item.content = nodes[i].textContent || '';
+			item.id = k + 1;
+			item.content = parsed[k].content;
 			list.push(item);
 		}
 		return list;
@@ -777,6 +797,12 @@
 		danmaku.items = items;
 		danmaku.name = name || 'danmaku';
 		servedSegments = {};
+		// 便于排查：把解析结果挂在 window 上（含首个弹幕的内容与时间）
+		window.__demoDanmakuParsed = {
+			name: danmaku.name,
+			count: items.length,
+			first: items[0] ? { progress: items[0].progress, mode: items[0].mode, color: items[0].color, content: items[0].content } : null,
+		};
 		if (!state.url) {
 			setStatus('弹幕已就绪（' + items.length + ' 条），播放视频时会自动装入', 'ok');
 			return;
@@ -879,17 +905,12 @@
 				return;
 			}
 
-			if (type === 'm3u8') {
-				setStatus('正在等待播放器创建 video 元素，随后交给 hls.js…');
-				attachHls(url);
-			} else {
 				setStatus('已用 ' + type.toUpperCase() + ' 链路启动播放器：' + url, 'ok');
-			}
+
 		});
 	}
 
 	function start() {
-		statusNode = document.getElementById('demo-status');
 		if (!window.jQuery) {
 			setStatus('缺少 jQuery：请先执行 node public/build-demo.mjs 准备 public/vendor（播放器不会自带全局 $）', 'error');
 			return;
@@ -899,52 +920,32 @@
 			return;
 		}
 		var url = getParam('url') || (document.getElementById('demo-url') || {}).value || '';
-		var type = getParam('type') || (document.getElementById('demo-type') || {}).value || 'auto';
 		var input = document.getElementById('demo-url');
-		var select = document.getElementById('demo-type');
 		if (input) {
 			input.value = url;
 		}
-		if (select) {
-			select.value = type;
-		}
-		if (!url) {
-			setStatus('请输入 mp4 / flv / m3u8 直链，或点击下面的示例', 'warn');
-			return;
-		}
-		state.url = url;
-		state.type = guessType(url, type);
-		boot();
 	}
 
 	/** 统一入口：设置地址与类型后启动播放 */
-	function startPlayback(url, type, label) {
+	function startPlayback(url, detectFrom, label) {
 		state.url = url;
-		state.type = guessType(url, type || 'auto');
+		state.type = guessType(detectFrom || url);
 		var input = document.getElementById('demo-url');
-		var select = document.getElementById('demo-type');
 		if (input && label) {
 			input.value = label;
-		}
-		if (select) {
-			select.value = type || 'auto';
 		}
 		boot();
 	}
 
-	window.demoPlayerStart = function (url, type) {
+	window.demoPlayerStart = function (url) {
 		if (!url) {
 			return;
 		}
 		var input = document.getElementById('demo-url');
-		var select = document.getElementById('demo-type');
 		if (input) {
 			input.value = url;
 		}
-		if (select) {
-			select.value = type || 'auto';
-		}
-		startPlayback(url, type || (select && select.value) || 'auto');
+		startPlayback(url);
 	};
 
 	/** 本地文件播放：用 object URL 喂给播放器（拖拽与“选择本地文件”都走这里） */
@@ -967,10 +968,10 @@
 		localObjectURL = URL.createObjectURL(file);
 		state.source = file;
 		state.size = file.size || 0;
-		var type = guessType(file.name || '', 'auto');
+		var type = guessType(file.name || '');
 		setStatus('正在用本地文件播放：' + (file.name || '未命名') + '（' + type + ' 链路，' + Math.round((file.size || 0) / 1048576) + ' MB）');
 		// 本地文件不需要写回地址框，避免把文件名当成地址
-		startPlayback(localObjectURL, type);
+		startPlayback(localObjectURL, file.name || '');
 	};
 
 	/** 只加载弹幕文件（页面上的“弹幕文件”按钮走这里） */

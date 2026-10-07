@@ -47,10 +47,9 @@
 ### 在线演示
 <https://hmjz100.github.io/Bilibili-Old-Player/>
 
-直接输入 `mp4`、`flv`、`m3u8` 等视频链接即可在线播放；也可以直接选择本地文件播放。  
+直接输入 `mp4`、`flv` 等视频链接即可在线播放；也可以直接选择本地文件播放。  
 在线播放需要目标服务器允许跨域（CORS），否则播放器将无法取到视频流；  
-播放器本身不支持 HLS，`m3u8` 格式由 hls.js 接管。  
-演示页源码在本仓库 `public/` 目录，产物会内置 jQuery 与 hls.js。  
+演示页源码在本仓库 `public/` 目录，产物会内置 jQuery。  
 部署方式：工作流编译完成后会自动将 `public/` 推送到独立的 `gh-pages` 分支，GitHub Pages 从该分支对外展示。
 
 ### Bilibili-Old

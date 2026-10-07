@@ -299,11 +299,21 @@ const updateVideoInfoData = (
         streamHost = '';
         streamType = '';
     }
-    // 本地文件（演示页选择/拖入的文件）是 blob: 地址，没有真实主机，统一标成「本地」
-    if (!streamHost && /^blob:|^data:|^file:/i.test(String(statInfo['url'] || statInfo['videoURL'] || ''))) {
-        streamHost = '本地';
-        streamType = '本地';
-    }
+    // 本地文件（演示页选择/拖入的文件）是 blob: 地址，没有真实主机，统一标成「本地视频」。
+    // flv 的 statInfo 里没有 url，所以再看一眼当前媒体元素的地址。
+    try {
+        const mediaEl = document.querySelector('video, audio') as HTMLMediaElement | null;
+        const maybeLocal = String(
+            statInfo['url'] || statInfo['videoURL'] || statInfo['audioURL'] || (mediaEl && mediaEl.currentSrc) || '',
+        );
+        if (/^blob:|^data:|^file:/i.test(maybeLocal)) {
+            streamHost = '本地视频';
+            streamType = '本地视频';
+            if (!videoStreamHost) {
+                videoStreamHost = '本地视频';
+            }
+        }
+    } catch (e) { }
 
     let droppedFrames = statInfo['droppedFrames'] + ' / ' + statInfo['decodedFrames'];
 
@@ -478,6 +488,18 @@ const updateVideoInfoData = (
             },
         ]);
     }
+
+    // 空值、NaN、undefined 的行直接不显示（本地视频这些统计本来就没有）
+    data = data.filter(item => {
+        const v: any = item.data;
+        if (v === '' || v === null || v === undefined) {
+            return false;
+        }
+        if (typeof v === 'number' && !isFinite(v)) {
+            return false;
+        }
+        return !/NaN|undefined/i.test(String(v));
+    });
 
     return data;
 };
