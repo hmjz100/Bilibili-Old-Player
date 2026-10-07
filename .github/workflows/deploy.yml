@@ -1,19 +1,31 @@
-name: 部署到 Github Pages
+name: 部署演示页到 GitHub Pages
 
 on:
   workflow_dispatch:
   push:
+    branches:
+      - dev
+
+# 推送到展示分支需要 contents 写权限；自动配置 Pages 需要 pages 写权限
+permissions:
+  contents: write
+  pages: write
+
+# 同一时间只保留一次部署，新的推送取消排队中的旧部署
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Build and Deploy
+    name: 构建并推送展示分支
     runs-on: ubuntu-latest
     steps:
       - name: 检查仓库
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: 安装 Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
 
       - name: Node - 更新包
         run: npm update
@@ -21,18 +33,38 @@ jobs:
       - name: Node - 安装依赖
         run: npm install
 
-      - name: Node - 构建
+      - name: Node - 构建播放器
         run: npm run build
 
-      - name: 准备部署目录
+      - name: 准备演示页
+        # 内置 jQuery 与 hls.js 到 public/vendor，并把播放器产物拷进 public
         run: |
-          mkdir -p public
-          cp -r dist/* public/
+          node public/build-demo.mjs
+          touch public/.nojekyll
 
-      - name: 部署到 Github Pages
-        uses: crazy-max/ghaction-github-pages@v2
-        with:
-          target_branch: gh-pages
-          build_dir: public
+      - name: 推送到展示分支（gh-pages）
+        # 编译产物只进展示分支，dev 分支保持干净
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/pages
+          cp -r public/. /tmp/pages/
+          cd /tmp/pages
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions[bot]" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -qm "部署播放器演示页 ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+          echo "已推送到 gh-pages 分支"
+
+      - name: 确保 Pages 指向展示分支
+        # 首次运行会自动开启 Pages 并把来源设为 gh-pages 分支；已经配置好时这里会报错但可忽略
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages" \
+            -f "source[branch]=gh-pages" -f "source[path]=/" \
+          || gh api -X PUT "repos/${GITHUB_REPOSITORY}/pages" \
+            -f "source[branch]=gh-pages" -f "source[path]=/"

@@ -48,6 +48,7 @@
 		"@types/mcustomscrollbar": "^2.8.37",
 		"@types/md5": "^2.3.6",
 		"esbuild": "^0.28.1",
+		"hls.js": "^1.7.3",
 		"reverse-sourcemap": "^1.0.4",
 		"typescript": "^6.0.3"
 	},

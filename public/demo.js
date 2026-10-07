@@ -1,0 +1,562 @@
+/*
+ * Bilibili-Old Player 演示页引导脚本
+ *
+ * 播放器并不接受「视频直链」这种参数：它要的是一份 B 站的 playurl 数据。
+ * 所以这个脚本负责把用户给的直链「包装」成播放器认识的世界：
+ *
+ *   1. 判定地址类型（mp4 / flv / m3u8，也支持手动指定）；
+ *   2. 合成 playurl（渐进式 durl）与视频元数据 __INITIAL_STATE__；
+ *   3. 拦截播放器发出的 playurl 接口请求，直接喂回合成数据
+ *      （这样画质切换、重新载入等后续请求也不会打到 B 站接口上）；
+ *   4. 按类型调整 flvjs 能力：mp4 / m3u8 时让 flvjs.isSupported() 返回 false，
+ *      迫使播放器走「原生 video」链路（播放器构造函数里就是这么判定的）；
+ *   5. 启动播放器；m3u8 播放器本身不支持，额外交给 hls.js 接管它建出来的 video 元素。
+ */
+(function () {
+	'use strict';
+
+	/** 演示用的假稿件信息（播放器只要求这些字段存在） */
+	var DEMO_AID = 1;
+	var DEMO_BVID = 'BV1xx411c7mD';
+	var DEMO_CID = 1;
+
+	var state = {
+		url: '',
+		type: 'mp4',
+		duration: 0,
+		loaded: false,
+	};
+
+	/** 本地文件的 object URL（切换文件时要释放） */
+	var localObjectURL = '';
+
+	var statusNode = null;
+
+	function setStatus(text, kind) {
+		if (!statusNode) {
+			statusNode = document.getElementById('demo-status');
+		}
+		if (!statusNode) {
+			return;
+		}
+		statusNode.textContent = text;
+		statusNode.className = 'demo-status' + (kind ? ' demo-status-' + kind : '');
+	}
+
+	function getParam(name) {
+		var search = window.location.search.replace(/^\?/, '');
+		var pairs = search ? search.split('&') : [];
+		for (var i = 0; i < pairs.length; i++) {
+			var kv = pairs[i].split('=');
+			if (kv[0] === name) {
+				try {
+					return decodeURIComponent(kv.slice(1).join('=').replace(/\+/g, ' '));
+				} catch (e) {
+					return kv.slice(1).join('=');
+				}
+			}
+		}
+		return '';
+	}
+
+	/**
+	 * 从地址与手动选择推断类型
+	 * @param {string} url 视频地址
+	 * @param {string} forced 手动指定的类型（auto / mp4 / flv / m3u8）
+	 */
+	function guessType(url, forced) {
+		if (forced && forced !== 'auto') {
+			return forced;
+		}
+		var path = url.split('#')[0].split('?')[0].toLowerCase();
+		if (/\.m3u8?$/.test(path)) {
+			return 'm3u8';
+		}
+		if (/\.flv$/.test(path)) {
+			return 'flv';
+		}
+		if (/\.(mp4|m4v|mov|webm|ogv|ogg|mkv|ts|mp3|m4a|aac|flac|wav|opus)$/.test(path)) {
+			return 'mp4';
+		}
+		// 没有扩展名时按查询参数猜一把，最后默认 mp4
+		if (/[?&](type|format)=flv/.test(url)) {
+			return 'flv';
+		}
+		if (/[?&](type|format)=(m3u8|hls)/.test(url)) {
+			return 'm3u8';
+		}
+		return 'mp4';
+	}
+
+	/** 用隐藏的 video 元素探测时长（flv / m3u8 无法这样探测，返回 0） */
+	function probeDuration(url, type) {
+		return new Promise(function (resolve) {
+			if (type !== 'mp4') {
+				resolve(0);
+				return;
+			}
+			var video = document.createElement('video');
+			var done = function (value) {
+				video.removeAttribute('src');
+				video.load();
+				resolve(value || 0);
+			};
+			video.preload = 'metadata';
+			video.muted = true;
+			video.onloadedmetadata = function () {
+				done(isFinite(video.duration) ? video.duration : 0);
+			};
+			video.onerror = function () {
+				done(0);
+			};
+			// 探测超时（跨域/网络慢时不要让页面卡住）
+			setTimeout(function () {
+				done(isFinite(video.duration) ? video.duration : 0);
+			}, 8000);
+			video.src = url;
+		});
+	}
+
+	/**
+	 * 合成 playurl（渐进式 durl）
+	 *
+	 * 关键字段说明（都对得上播放器里的解析逻辑）：
+	 *   from: 'local'  必填，否则播放器会以「Unsupported video source」拒绝；
+	 *   format         必须与 flvjs 能力匹配：flv 时不能含 mp4，mp4 时必须含 mp4；
+	 *   durl[]         url / length(毫秒) / size / backup_url。
+	 */
+	function buildPlayurl(url, type, durationSec, quality) {
+		var isFlv = type === 'flv';
+		var format = isFlv ? 'flv' : 'mp4';
+		var durationMs = Math.round((durationSec || 0) * 1000);
+		return {
+			code: 0,
+			message: '0',
+			ttl: 1,
+			data: {
+				from: 'local',
+				result: 'suee',
+				quality: quality || 80,
+				format: format,
+				timelength: durationMs,
+				accept_format: format,
+				accept_quality: [quality || 80],
+				accept_description: ['高清 1080P'],
+				support_formats: [
+					{
+						quality: quality || 80,
+						format: format,
+						new_description: '1080P',
+						display_desc: '1080P',
+						superscript: '',
+						codecs: [],
+					},
+				],
+				durl: [
+					{
+						order: 1,
+						length: durationMs,
+						size: 0,
+						url: url,
+						backup_url: [],
+					},
+				],
+			},
+		};
+	}
+
+	function buildInitialState(name, type, durationSec) {
+		var videoData = {
+			aid: DEMO_AID,
+			bvid: DEMO_BVID,
+			cid: DEMO_CID,
+			p: 1,
+			pages: [
+				{
+					cid: DEMO_CID,
+					page: 1,
+					from: 'vupload',
+					part: name,
+					duration: Math.round(durationSec || 0),
+					vid: '',
+					weblink: '',
+					dimension: { width: 1920, height: 1080, rotate: 0 },
+				},
+			],
+			title: name,
+			duration: Math.round(durationSec || 0),
+			pic: '',
+			desc: '本页面是 Bilibili-Old Player 的演示页，播放的是外部直链（' + type.toUpperCase() + '）。',
+			pubdate: Math.floor(Date.now() / 1000),
+			owner: { mid: 1, name: '演示', face: '' },
+			stat: {
+				aid: DEMO_AID,
+				view: 0,
+				danmaku: 0,
+				reply: 0,
+				favorite: 0,
+				coin: 0,
+				share: 0,
+				like: 0,
+				now_rank: 0,
+				his_rank: 0,
+				evaluation: '',
+			},
+			dimension: { width: 1920, height: 1080, rotate: 0 },
+		};
+		return {
+			videoData: videoData,
+			aid: DEMO_AID,
+			bvid: DEMO_BVID,
+			cid: DEMO_CID,
+			p: 1,
+			videoStatus: 'ok',
+		};
+	}
+
+	/** 把合成数据当作接口应答塞回 XHR */
+	function respond(xhr, body) {
+		var text = JSON.stringify(body);
+		var define = function (key, value) {
+			try {
+				Object.defineProperty(xhr, key, { configurable: true, value: value });
+			} catch (e) {
+				/* 某些字段无法覆盖时忽略即可 */
+			}
+		};
+		define('readyState', 4);
+		define('status', 200);
+		define('statusText', 'OK');
+		define('responseURL', xhr.__demoURL || '');
+		define('responseText', text);
+		define('response', xhr.responseType === 'json' ? body : text);
+		xhr.getAllResponseHeaders = function () {
+			return 'content-type: application/json\r\n';
+		};
+		xhr.getResponseHeader = function (name) {
+			return String(name).toLowerCase() === 'content-type' ? 'application/json' : null;
+		};
+		setTimeout(function () {
+			try {
+				xhr.dispatchEvent(new Event('readystatechange'));
+				xhr.dispatchEvent(new ProgressEvent('load'));
+				xhr.dispatchEvent(new ProgressEvent('loadend'));
+			} catch (e) {
+				/* 事件派发失败不该影响播放 */
+			}
+		}, 0);
+	}
+
+	/**
+	 * 拦截播放器发出的接口请求
+	 * 只处理「播放地址」相关的接口，其它接口（弹幕、点赞等）保持原样，
+	 * 让它们自然失败，避免伪造出错误的数据结构把播放器带偏。
+	 */
+	function installNetworkBridge() {
+		var playurlAnswer = function (url, payload) {
+			var qn = String(payload || '').match(/[?&]qn=(\d+)/);
+			return buildPlayurl(state.url, state.type, state.duration, qn ? Number(qn[1]) : 0);
+		};
+		var route = function (url, payload) {
+			if (/player\/(wbi\/)?playurl/i.test(url)) {
+				return playurlAnswer(url, payload);
+			}
+			if (/web-interface\/view/i.test(url)) {
+				return { code: 0, message: '0', ttl: 1, data: window.__INITIAL_STATE__.videoData };
+			}
+			return null;
+		};
+
+		var originalOpen = XMLHttpRequest.prototype.open;
+		var originalSend = XMLHttpRequest.prototype.send;
+
+		XMLHttpRequest.prototype.open = function (method, url) {
+			this.__demoURL = String(url || '');
+			return originalOpen.apply(this, arguments);
+		};
+
+		XMLHttpRequest.prototype.send = function (body) {
+			var url = this.__demoURL || '';
+			var payload = url + '&' + (typeof body === 'string' ? body : '');
+			try {
+				var answer = route(url, payload);
+				if (answer) {
+					respond(this, answer);
+					return;
+				}
+			} catch (e) {
+				/* 拦截失败就退回真实请求 */
+			}
+			return originalSend.apply(this, arguments);
+		};
+
+		// 万一哪条链路用的是 fetch，也一并兜住
+		if (typeof window.fetch === 'function') {
+			var originalFetch = window.fetch.bind(window);
+			window.fetch = function (input, init) {
+				var url = typeof input === 'string' ? input : (input && input.url) || '';
+				try {
+					var answer = route(url, init && init.body ? String(init.body) : '');
+					if (answer) {
+						return Promise.resolve(
+							new Response(JSON.stringify(answer), {
+								status: 200,
+								headers: { 'content-type': 'application/json' },
+							}),
+						);
+					}
+				} catch (e) {
+					/* 拦截失败就退回真实请求 */
+				}
+				return originalFetch(input, init);
+			};
+		}
+	}
+
+	/** 按需加载 hls.js（只有 m3u8 才需要，避免多余请求） */
+	function loadHls() {
+		return new Promise(function (resolve, reject) {
+			if (window.Hls) {
+				resolve(window.Hls);
+				return;
+			}
+			var script = document.createElement('script');
+			script.src = './vendor/hls.min.js';
+			script.onload = function () {
+				window.Hls ? resolve(window.Hls) : reject(new Error('hls.js 已加载但未挂载全局 Hls'));
+			};
+			script.onerror = function () {
+				reject(new Error('无法加载 ./vendor/hls.min.js（请先执行 node public/build-demo.mjs）'));
+			};
+			document.head.appendChild(script);
+		});
+	}
+
+	/**
+	 * mp4 / m3u8 强制走原生链路
+	 * 播放器构造函数会直接读 window.flvjs.isSupported() 来决定 allowFlv，
+	 * 为 true 时它会按 FLV 去要地址、并拒绝 format 含 mp4 的 playurl。
+	 */
+	function forceNativePlayer() {
+		if (window.flvjs && typeof window.flvjs.isSupported === 'function') {
+			window.flvjs.isSupported = function () {
+				return false;
+			};
+		}
+	}
+
+	/** m3u8：用 hls.js 接管播放器建出来的 video 元素 */
+	function attachHls(url) {
+		var waited = 0;
+		var timer = setInterval(function () {
+			waited += 250;
+			var video = document.querySelector('#bilibili-player video') || document.querySelector('#bofqi video') || document.querySelector('.bilibili-player video');
+			if (!video) {
+				if (waited > 20000) {
+					clearInterval(timer);
+					setStatus('没有等到播放器的 video 元素，m3u8 无法接管', 'error');
+				}
+				return;
+			}
+			clearInterval(timer);
+			loadHls()
+				.then(function (Hls) {
+					if (!Hls.isSupported()) {
+						setStatus('当前浏览器不支持 MSE，hls.js 无法播放 m3u8（播放器本身不支持 HLS）', 'error');
+						return;
+					}
+					var hls = new Hls({ enableWorker: true });
+					hls.on(Hls.Events.ERROR, function (event, data) {
+						if (data && data.fatal) {
+							setStatus('HLS 播放错误：' + data.type + ' / ' + data.details, 'error');
+						}
+					});
+					hls.on(Hls.Events.MANIFEST_PARSED, function () {
+						setStatus('m3u8 已由 hls.js 接管播放：' + url, 'ok');
+						var play = video.play();
+						play && play.catch && play.catch(function () { });
+					});
+					hls.loadSource(url);
+					hls.attachMedia(video);
+					window.__demoHls = hls;
+				})
+				.catch(function (e) {
+					setStatus('m3u8 需要 hls.js：' + (e && e.message ? e.message : e), 'error');
+				});
+		}, 250);
+	}
+
+	/**
+	 * 换源前先拆掉上一个播放器。
+	 * GrayManager 是单例且有 initialized 守卫，不重置的话第二次 EmbedPlayer 会直接空转，
+	 * 表现就是「换地址/换文件没反应」。
+	 */
+	function teardown() {
+		try {
+			window.player && window.player.destroy && window.player.destroy();
+		} catch (e) {
+			/* 忽略 */
+		}
+		try {
+			if (window.__demoHls) {
+				window.__demoHls.destroy();
+				window.__demoHls = null;
+			}
+		} catch (e) {
+			/* 忽略 */
+		}
+		try {
+			var gray = window.GrayManager;
+			if (gray) {
+				gray.initialized = false;
+				gray.storageLoaded = false;
+				gray.playerParams = null;
+				gray.h5Params = null;
+				gray.enable = false;
+				gray.statusList = [];
+			}
+		} catch (e) {
+			/* 忽略 */
+		}
+		window.player = undefined;
+		window.__playinfo__ = undefined;
+		delete window.__playurlMap__;
+		var bofqi = document.getElementById('bilibili-player') || document.getElementById('bofqi');
+		if (bofqi) {
+			bofqi.innerHTML = '';
+		}
+	}
+
+	function boot() {
+		var url = state.url;
+		var type = state.type;
+		var name = url.split('/').pop().split('?')[0] || '外部视频';
+
+		setStatus('正在准备播放器…');
+		teardown();
+
+		probeDuration(url, type).then(function (duration) {
+			state.duration = duration;
+			// 播放器要的全局数据
+			window.__INITIAL_STATE__ = buildInitialState(name, type, duration);
+			window.__playinfo__ = buildPlayurl(url, type, duration, 0);
+			window.__playurlMap__ = {};
+			window.__playurlMap__[DEMO_CID] = window.__playinfo__;
+			window.aid = DEMO_AID;
+			window.bvid = DEMO_BVID;
+			window.cid = DEMO_CID;
+			window.pageno = 1;
+			window.show_bv = true;
+
+			if (type !== 'flv') {
+				forceNativePlayer();
+			}
+
+			installNetworkBridge();
+
+			// 播放器默认会把 http 源改写成 https（enable_ssl_stream 默认 true），http 直链必须关掉
+			var params = 'cid=' + DEMO_CID + '&aid=' + DEMO_AID + '&autoplay=1&as_wide=1';
+			if (/^http:\/\//i.test(url)) {
+				params += '&enable_ssl_stream=0';
+			}
+
+			try {
+				window.EmbedPlayer('player', '', params, '', false, function () { }, true);
+			} catch (e) {
+				setStatus('播放器启动失败：' + (e && e.message ? e.message : e), 'error');
+				return;
+			}
+
+			if (type === 'm3u8') {
+				setStatus('正在等待播放器创建 video 元素，随后交给 hls.js…');
+				attachHls(url);
+			} else {
+				setStatus('已用 ' + type.toUpperCase() + ' 链路启动播放器：' + url, 'ok');
+			}
+		});
+	}
+
+	function start() {
+		statusNode = document.getElementById('demo-status');
+		if (!window.jQuery) {
+			setStatus('缺少 jQuery：请先执行 node public/build-demo.mjs 准备 public/vendor（播放器不会自带全局 $）', 'error');
+			return;
+		}
+		if (!window.EmbedPlayer) {
+			setStatus('缺少播放器产物 video.js：请先执行 npm run build 与 node public/build-demo.mjs', 'error');
+			return;
+		}
+		var url = getParam('url') || (document.getElementById('demo-url') || {}).value || '';
+		var type = getParam('type') || (document.getElementById('demo-type') || {}).value || 'auto';
+		var input = document.getElementById('demo-url');
+		var select = document.getElementById('demo-type');
+		if (input) {
+			input.value = url;
+		}
+		if (select) {
+			select.value = type;
+		}
+		if (!url) {
+			setStatus('请输入 mp4 / flv / m3u8 直链，或点击下面的示例', 'warn');
+			return;
+		}
+		state.url = url;
+		state.type = guessType(url, type);
+		boot();
+	}
+
+	/** 统一入口：设置地址与类型后启动播放 */
+	function startPlayback(url, type, label) {
+		state.url = url;
+		state.type = guessType(url, type || 'auto');
+		var input = document.getElementById('demo-url');
+		var select = document.getElementById('demo-type');
+		if (input && label) {
+			input.value = label;
+		}
+		if (select) {
+			select.value = type || 'auto';
+		}
+		boot();
+	}
+
+	window.demoPlayerStart = function (url, type) {
+		if (!url) {
+			return;
+		}
+		var input = document.getElementById('demo-url');
+		var select = document.getElementById('demo-type');
+		if (input) {
+			input.value = url;
+		}
+		if (select) {
+			select.value = type || 'auto';
+		}
+		startPlayback(url, type || (select && select.value) || 'auto');
+	};
+
+	/** 本地文件播放：用 object URL 喂给播放器（拖拽与“选择本地文件”都走这里） */
+	window.demoPlayerLocalFile = function (file) {
+		if (!file) {
+			return;
+		}
+		if (localObjectURL) {
+			try {
+				URL.revokeObjectURL(localObjectURL);
+			} catch (e) {
+				/* 忽略 */
+			}
+		}
+		localObjectURL = URL.createObjectURL(file);
+		var type = guessType(file.name || '', 'auto');
+		setStatus('正在用本地文件播放：' + (file.name || '未命名') + '（' + type + ' 链路）');
+		// 本地文件不需要写回地址框，避免把文件名当成地址
+		startPlayback(localObjectURL, type);
+	};
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', start);
+	} else {
+		start();
+	}
+})();

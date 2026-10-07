@@ -1,169 +1,286 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
 
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width,initial-scale=1" />
-	<title>哔哩哔哩旧播放器</title>
-	<script src="https://unpkg.com/jquery@3.6.0/dist/jquery.min.js"></script>
-	<link rel="stylesheet" href="./video.css" />
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>Bilibili-Old Player 演示</title>
+	<link rel="stylesheet" href="./video.css">
 	<style>
+		:root {
+			color-scheme: dark;
+		}
+
 		html,
 		body {
 			margin: 0;
 			padding: 0;
-			width: 100%;
-			height: 100%;
-			overflow: hidden;
+			min-height: 100%;
+			background: #17181c;
+			color: #e6e8eb;
+			font: 14px/1.6 "Microsoft YaHei", -apple-system, "Segoe UI", Roboto, sans-serif;
 		}
 
-		.player {
-			display: block;
-			position: relative;
-			width: 1160px;
-			height: 720px;
+		.wrap {
+			max-width: 1160px;
 			margin: 0 auto;
-			padding: 0;
-			background-color: #333;
-			-webkit-box-shadow: #ddd 0 0 5px;
-			box-shadow: 0 0 5px #ddd;
-			background-image: url(https://s1.hdslb.com/bfs/static/bangumi/play/asserts/limit-player-1.png);
-			background-position: bottom;
-			background-repeat: no-repeat;
+			padding: 20px 16px 48px;
+		}
+
+		h1 {
+			margin: 0 0 4px;
+			font-size: 20px;
+		}
+
+		.tip {
+			margin: 0 0 16px;
+			color: #9aa4b2;
+			font-size: 13px;
+		}
+
+		.tip code {
+			color: #7fd6ef;
+		}
+
+		.bar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			align-items: center;
+			margin-bottom: 10px;
+		}
+
+		.bar input[type="text"] {
+			flex: 1 1 380px;
+			min-width: 240px;
+			padding: 8px 10px;
+			border: 1px solid #2f3238;
+			border-radius: 6px;
+			background: #1f2126;
+			color: inherit;
+			font: inherit;
+		}
+
+		.bar select,
+		.bar button {
+			padding: 8px 14px;
+			border: 1px solid #2f3238;
+			border-radius: 6px;
+			background: #26282e;
+			color: inherit;
+			font: inherit;
+			cursor: pointer;
+		}
+
+		.bar button.primary {
+			border-color: #00a1d6;
+			background: #00a1d6;
+			color: #fff;
+		}
+
+		.bar button:hover {
+			border-color: #00a1d6;
+		}
+
+		.samples {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin: 0 0 12px;
+			font-size: 13px;
+			color: #9aa4b2;
+			align-items: center;
+		}
+
+		.samples button {
+			padding: 4px 10px;
+			border: 1px solid #2f3238;
+			border-radius: 999px;
+			background: #1f2126;
+			color: #c7ccd3;
+			font: inherit;
+			cursor: pointer;
+		}
+
+		.demo-status {
+			margin: 0 0 12px;
+			padding: 8px 12px;
+			border-left: 3px solid #3a3f47;
+			border-radius: 4px;
+			background: #1f2126;
+			color: #9aa4b2;
+			word-break: break-all;
+		}
+
+		.demo-status-ok {
+			border-left-color: #00a1d6;
+			color: #7fd6ef;
+		}
+
+		.demo-status-warn {
+			border-left-color: #d6a300;
+			color: #e8c86a;
+		}
+
+		.demo-status-error {
+			border-left-color: #d63a3a;
+			color: #ef9a9a;
+		}
+
+		/* 播放器容器：保持 16:9，播放器会把 #bofqi 内部接管掉 */
+		.player {
+			position: relative;
+			width: 100%;
+			aspect-ratio: 16 / 9;
+			background: #000;
+			border-radius: 6px;
+			overflow: hidden;
+			outline: 2px dashed transparent;
+			outline-offset: -2px;
+			transition: outline-color 0.15s;
+		}
+
+		.player.dragover {
+			outline-color: #00a1d6;
+		}
+
+		.player.dragover::after {
+			content: "松手即用本地文件播放";
+			position: absolute;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(0, 0, 0, 0.55);
+			color: #7fd6ef;
+			font-size: 16px;
+			pointer-events: none;
+			z-index: 10;
 		}
 
 		#bofqi {
-			margin: 0;
-			padding: 0;
-			padding: 0;
 			width: 100%;
 			height: 100%;
 		}
 
-		.player .bilibili-player {
-			box-shadow: none;
-		}
-
-		.player .bilibili-player-video-bottom-area .bilibili-player-video-sendbar {
-			box-sizing: border-box;
-			border-left: 1.5px solid #f4f4f4;
-			border-bottom: 1.5px solid #f4f4f4;
-			border-right: 1.5px solid #f4f4f4;
-		}
-
-		.player-with-auxiliary {
-			display: -webkit-box;
-			display: -webkit-flex;
-			display: -ms-flexbox;
-			display: -moz-box;
-			display: -moz-flex;
-			display: flex;
-		}
-
-		.player-with-auxiliary .player {
-			-webkit-box-flex: 1;
-			-webkit-flex: 1;
-			-moz-box-flex: 1;
-			-moz-flex: 1;
-			-ms-flex: 1;
-			flex: 1;
-		}
-
-		.player-with-auxiliary .danmaku-box {
-			width: 320px;
-			margin-left: 30px;
-		}
-
-		.player-mode-widescreen .danmaku-box {
-			display: none;
-		}
-
-		#act-preview-alert-mask {
+		/* 演示页固定用 HTML5 播放器，隐藏播放器自带的「Flash/HTML5 播放器」切换按钮 */
+		.bgray-btn-wrap {
 			display: none !important;
+		}
+
+		footer {
+			margin-top: 16px;
+			color: #6b7280;
+			font-size: 12px;
+			line-height: 1.8;
+		}
+
+		footer code {
+			color: #9aa4b2;
 		}
 	</style>
 </head>
 
 <body>
-	<div id="heimu"></div>
-	<div class="player">
-		<div id="bofqi"></div>
+	<div class="wrap">
+		<h1>Bilibili-Old Player 演示</h1>
+		<p class="tip">
+			输入 <code>mp4</code> / <code>flv</code> / <code>m3u8</code> 直链，或直接选择本地文件（<code>mp4</code>、<code>mp3</code>、<code>flv</code> 等，能播的就播），
+			用本仓库重构的 B 站经典播放器播放（m3u8 由 hls.js 接管）。
+		</p>
+
+		<div class="bar">
+			<input id="demo-url" type="text" placeholder="https://example.com/video.mp4" spellcheck="false">
+			<select id="demo-type" title="类型（默认按扩展名自动判断）">
+				<option value="auto">自动</option>
+				<option value="mp4">原生（mp4 / mp3 等）</option>
+				<option value="flv">flv</option>
+				<option value="m3u8">m3u8</option>
+			</select>
+			<button id="demo-play" class="primary" type="button">播放</button>
+			<button id="demo-pick" type="button">选择本地文件</button>
+			<input id="demo-file" type="file" hidden
+				accept="video/*,audio/*,.mp4,.m4v,.mov,.flv,.m3u8,.ts,.mkv,.webm,.mp3,.m4a,.aac,.flac,.wav,.opus">
+		</div>
+
+		<div class="samples">
+			<span>示例：</span>
+			<button type="button" data-url="https://www.w3schools.com/html/mov_bbb.mp4">mp4</button>
+			<button type="button" data-url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">m3u8</button>
+			<span>（也可以把本地文件拖到播放器区域）</span>
+		</div>
+
+		<p id="demo-status" class="demo-status">正在准备…</p>
+
+		<div class="player" id="demo-player">
+			<div id="heimu"></div>
+			<div id="bofqi"></div>
+		</div>
+
+		<footer>
+			播放器产物不包含 jQuery，本页已内置 jQuery 与 hls.js（<code>public/vendor/</code>，由 <code>node public/build-demo.mjs</code> 生成）。<br>
+			地址也可通过 <code>?url=&amp;type=</code> 直接指定；<code>flv</code> / <code>m3u8</code> 需要目标服务器允许跨域（CORS），否则取不到流。
+		</footer>
 	</div>
 
-	<script type="text/javascript">
-		var url = './video.js?bver=100' + Math.ceil(Date.now() / 300000);
-		function loadJS(url, callback) {
-			var script = document.createElement('script'),
-				fn = callback || function () { };
-			script.type = 'text/javascript';
+	<script src="./vendor/jquery.min.js"></script>
+	<script src="./video.js"></script>
+	<script src="./demo.js"></script>
+	<script>
+		(function () {
+			var input = document.getElementById('demo-url');
+			var select = document.getElementById('demo-type');
+			var play = document.getElementById('demo-play');
+			var pick = document.getElementById('demo-pick');
+			var file = document.getElementById('demo-file');
+			var playerBox = document.getElementById('demo-player');
 
-			if (script.readyState) {
-				script.onreadystatechange = function () {
-					if (script.readyState == 'loaded' || script.readyState == 'complete') {
-						script.onreadystatechange = null;
-						fn();
-					}
-				};
-			} else {
-				script.onload = function () {
-					fn();
-				};
-			}
-			script.src = url;
-			document.getElementsByTagName('head')[0].appendChild(script);
-		}
-
-		loadJS(url, function () {
-			// 如果没有查询参数，则默认调用示例视频
-			var search = location.search.slice(1);
-			if (!search) {
-				search = 'url=' + encodeURIComponent('https://artplayer.org/assets/sample/video.mp4');
-			}
-			window.EmbedPlayer && window.EmbedPlayer('player', '', search, '', false, '', true);
-
-			// 临时容器方案
-			try {
-				if (window.frameElement && top.location.href) {
-					if (!window.parent.Html5IframeInitializedInjected) {
-						window.parent.Html5IframeInitializedInjected = window.parent.Html5IframeInitialized || function () { };
-
-						window.parent.Html5IframeInitialized = function () {
-							var hasPlay = false;
-							// 如果有其它视频在播放时，当前视频暂停
-							top.document.querySelectorAll('iframe').forEach(function (e) {
-								try {
-									if (e.contentWindow.player) {
-										if (hasPlay) {
-											e.contentWindow.player.pause();
-										} else if (!e.contentWindow.document.querySelector('video').paused) {
-											hasPlay = true;
-										}
-
-										if (!e.contentWindow.initializedInjected) {
-											e.contentWindow.initializedInjected = true;
-
-											// 当前视频播放时，其它视频暂停
-											e.contentWindow.player.addEventListener('video_media_play', function () {
-												top.document.querySelectorAll('iframe').forEach(function (g) {
-													try {
-														if (g !== e.contentWindow.frameElement && g.contentWindow.player) {
-															if (!g.contentWindow.document.querySelector('video').paused) {
-																g.contentWindow.player.pause();
-															}
-														}
-													} catch (e) { }
-												});
-											});
-										}
-									}
-								} catch (e) { }
-							});
-							return window.parent.Html5IframeInitializedInjected();
-						}
-					}
+			play.addEventListener('click', function () {
+				var url = (input.value || '').trim();
+				if (url) {
+					window.demoPlayerStart(url, select.value);
 				}
-			} catch (e) { }
-		});
+			});
+			input.addEventListener('keydown', function (e) {
+				if (e.key === 'Enter') {
+					play.click();
+				}
+			});
+			pick.addEventListener('click', function () {
+				file.click();
+			});
+			file.addEventListener('change', function () {
+				if (file.files && file.files[0]) {
+					window.demoPlayerLocalFile(file.files[0]);
+				}
+			});
+			Array.prototype.forEach.call(document.querySelectorAll('.samples button'), function (btn) {
+				btn.addEventListener('click', function () {
+					window.demoPlayerStart(btn.getAttribute('data-url'), 'auto');
+				});
+			});
+
+			// 拖拽本地文件到播放器区域即可播放
+			['dragenter', 'dragover'].forEach(function (name) {
+				playerBox.addEventListener(name, function (e) {
+					e.preventDefault();
+					playerBox.classList.add('dragover');
+				});
+			});
+			['dragleave', 'dragend'].forEach(function (name) {
+				playerBox.addEventListener(name, function () {
+					playerBox.classList.remove('dragover');
+				});
+			});
+			playerBox.addEventListener('drop', function (e) {
+				e.preventDefault();
+				playerBox.classList.remove('dragover');
+				var files = e.dataTransfer && e.dataTransfer.files;
+				if (files && files[0]) {
+					window.demoPlayerLocalFile(files[0]);
+				}
+			});
+		})();
 	</script>
 </body>
 

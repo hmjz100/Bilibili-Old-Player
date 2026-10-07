@@ -40,6 +40,16 @@
 2. 添加一个 id 为 `bofqi` 的 div 节点作为播放器容器。
 3. 通过全局的 `EmbedPlayer` 方法启动播放器。
 
+> 注意：`dist` 产物**不包含 jQuery**（播放器假定宿主持有全局 `$`），宿主页面需要自行引入 jQuery，否则播放器初始化会直接抛错。
+
+### 在线演示
+<https://hmjz100.github.io/Bilibili-Old-Player/>
+
+直接输入 `mp4`、`flv`、`m3u8` 直链即可试播；也可以直接**选择本地文件或拖进播放器区域**，`mp4`、`mp3`、`flv` 等能播的都会播。
+`flv` 与 `m3u8` 需要目标服务器允许跨域（CORS），否则取不到流；播放器本身不支持 HLS，`m3u8` 由 hls.js 接管播放器的 `video` 元素。
+演示页源码在本仓库 `public/` 目录，产物会内置 jQuery 与 hls.js（由 `node public/build-demo.mjs` 生成）。
+部署方式：工作流编译完成后把 `public/` 推送到独立的 `gh-pages` 分支（不动 `dev` 分支），GitHub Pages 从该分支对外展示。
+
 ### Bilibili-Old
 使用基于本项目的 [Bilibili-Old](https://github.com/hmjz100/Bilibili-Old) 扩展或用户脚本。  
 开发者可将本项目 `dist` 目录下的生成文件复制到 [Bilibili-Old](https://github.com/hmjz100/Bilibili-Old) 项目的 `extension/player` 目录下  
