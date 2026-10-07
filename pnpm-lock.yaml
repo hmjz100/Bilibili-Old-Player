@@ -163,8 +163,8 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
       three:
-        specifier: ^0.144.0
-        version: 0.144.0
+        specifier: ^0.186.1
+        version: 0.186.1
     devDependencies:
       '@types/hammerjs':
         specifier: ^2.0.41
@@ -718,8 +718,8 @@ packages:
   stylefire@7.0.3:
     resolution: {integrity: sha512-Q0l7NSeFz/OkX+o6/7Zg3VZxSAZeQzQpYomWmIpOehFM/rJNMSLVX5fgg6Q48ut2ETNKwdhm97mPNU643EBCoQ==}
 
-  three@0.144.0:
-    resolution: {integrity: sha512-R8AXPuqfjfRJKkYoTQcTK7A6i3AdO9++2n8ubya/GTU+fEHhYKu1ZooRSCPkx69jbnzT7dD/xEo6eROQTt2lJw==}
+  three@0.186.1:
+    resolution: {integrity: sha512-blFeqb49wRCSGUGj7gtpfnSGHy2lwDk94RhUmS1c/hTby70kvChbWpkJ4Pm1390LqzzvTmzgXKHPEafJwCb8jA==}
 
   tiny-emitter@2.1.0:
     resolution: {integrity: sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==}
@@ -1206,7 +1206,7 @@ snapshots:
       style-value-types: 3.2.0
       tslib: 1.14.1
 
-  three@0.144.0: {}
+  three@0.186.1: {}
 
   tiny-emitter@2.1.0: {}
 

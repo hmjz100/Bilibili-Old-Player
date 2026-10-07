@@ -12,7 +12,7 @@
     "pako": "^2.0.4",
     "popmotion": "^11.0.5",
     "stylefire": "^7.0.3",
-    "three": "^0.144.0"
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/hammerjs": "^2.0.41",
