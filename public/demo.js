@@ -25,6 +25,9 @@
 		type: 'mp4',
 		duration: 0,
 		loaded: false,
+		/** 本地文件时保留 File 引用，便于直接切片读元数据（flv 时长） */
+		source: null,
+		size: 0,
 	};
 
 	/** 本地文件的 object URL（切换文件时要释放） */
@@ -94,9 +97,73 @@
 		return 'mp4';
 	}
 
-	/** 用隐藏的 video 元素探测时长（flv / m3u8 无法这样探测，返回 0） */
-	function probeDuration(url, type) {
+	/**
+	 * 读 flv 的时长：先看文件头 onMetaData 里的 duration，
+	 * 没有就回退到「尾部 tag 时间戳」（用前一个 tag 的长度做校验，滤掉误命中）。
+	 * 时长很重要：播放器弹幕模块会用 duration / pageSize 决定要拉多少分段，
+	 * 读不到时长（Infinity）会让它陷入无休止的分段请求。
+	 */
+	function probeFlvDuration(source, size) {
+		var HEAD = 65536;
+		var TAIL = 1048576;
+		var read = function (start, end) {
+			if (source instanceof Blob) {
+				return source.slice(start, end).arrayBuffer();
+			}
+			return fetch(source, { headers: { Range: 'bytes=' + start + '-' + (end - 1) } }).then(function (r) {
+				return r.arrayBuffer();
+			});
+		};
+		return read(0, Math.min(HEAD, size || HEAD))
+			.then(function (buf) {
+				var u8 = new Uint8Array(buf);
+				var text = '';
+				for (var i = 0; i < u8.length; i++) {
+					text += String.fromCharCode(u8[i]);
+				}
+				var at = text.indexOf('duration');
+				if (at > 0 && at + 9 <= u8.length - 8) {
+					var val = new DataView(buf).getFloat64(at + 9);
+					if (isFinite(val) && val > 1 && val < 86400) {
+						return val;
+					}
+				}
+				if (!size || size <= TAIL) {
+					return 0;
+				}
+				return read(size - TAIL, size).then(function (buf2) {
+					var b = new Uint8Array(buf2);
+					var max = 0;
+					for (var j = 4; j + 11 < b.length; j++) {
+						var type = b[j];
+						if (type !== 8 && type !== 9 && type !== 18) {
+							continue;
+						}
+						var sz = (b[j + 1] << 16) | (b[j + 2] << 8) | b[j + 3];
+						var prev = ((b[j - 4] << 24) | (b[j - 3] << 16) | (b[j - 2] << 8) | b[j - 1]) >>> 0;
+						if (prev !== sz + 11) {
+							continue;
+						}
+						var ts = (b[j + 4] << 16) | (b[j + 5] << 8) | b[j + 6];
+						if (ts > max && ts < 86400000) {
+							max = ts;
+						}
+					}
+					return max / 1000;
+				});
+			})
+			.catch(function () {
+				return 0;
+			});
+	}
+
+	/** 探测时长：mp4 用隐藏 video，flv 读容器元数据，其余返回 0 */
+	function probeDuration(url, type, source, size) {
 		return new Promise(function (resolve) {
+			if (type === 'flv') {
+				probeFlvDuration(source || url, size || 0).then(resolve);
+				return;
+			}
 			if (type !== 'mp4') {
 				resolve(0);
 				return;
@@ -271,10 +338,11 @@
 		var route = function (url, payload) {
 			// 弹幕：用本地弹幕（xml/json）编码成播放器要的 protobuf 应答
 			if (/dm\/web\/seg\.so/i.test(url)) {
-				return encodeDanmakuSeg(danmaku.items);
+				var seg = /segment_index=(\d+)/.exec(url);
+				return danmakuSegment(seg ? Number(seg[1]) : 1);
 			}
 			if (/dm\/web\/view/i.test(url)) {
-				return encodeDmView(danmaku.items.length);
+				return encodeDmView(danmaku.items.length, state.duration);
 			}
 			if (/player\/(wbi\/)?playurl/i.test(url)) {
 				return playurlAnswer(url, payload);
@@ -439,6 +507,7 @@
 		window.player = undefined;
 		window.__playinfo__ = undefined;
 		delete window.__playurlMap__;
+		servedSegments = {};
 		var bofqi = document.getElementById('bilibili-player') || document.getElementById('bofqi');
 		if (bofqi) {
 			bofqi.innerHTML = '';
@@ -591,17 +660,42 @@
 		return new Uint8Array(out).buffer;
 	}
 
-	/** DmWebViewReply：1 state、2 text、4 dmSge(DmSegConfig)、8 count */
-	function encodeDmView(count) {
+	/** DmWebViewReply：1 state、2 text、4 dmSge(DmSegConfig)、8 count
+	 *  pageSize 给成整段时长，这样播放器只会请求 1 个分段（否则长视频会拉几百段、
+	 *  每段失败还会递归重试，把主线程淹死） */
+	function encodeDmView(count, durationSec) {
 		var b = [];
 		pbInt(b, 1, 0);
 		pbStr(b, 2, '演示弹幕');
 		pbInt(b, 8, count);
 		var sge = [];
-		pbInt(sge, 1, 6000);
+		pbInt(sge, 1, Math.max(6000, Math.round((durationSec || 0) * 1000)));
 		pbInt(sge, 2, 1);
 		pbMsg(b, 4, sge);
 		return new Uint8Array(b).buffer;
+	}
+
+	/** 已答复过的分段（同一分段只喂一次，避免重复叠加弹幕） */
+	var servedSegments = {};
+
+	/** 取某个分段的弹幕（按时间窗切分，和 view 里的 pageSize 对应） */
+	function danmakuSegment(index) {
+		var key = String(index);
+		if (servedSegments[key]) {
+			return new ArrayBuffer(0);
+		}
+		servedSegments[key] = true;
+		var pageSec = Math.max(6, state.duration || 0);
+		var from = (index - 1) * pageSec;
+		var to = index * pageSec;
+		var items = danmaku.items.filter(function (it) {
+			return it.progress >= from * 1000 && it.progress < to * 1000;
+		});
+		// 便于排查重复：记录每个分段实际喂出去的条数
+		window.__demoDanmakuServed = window.__demoDanmakuServed || { segments: {}, items: 0 };
+		window.__demoDanmakuServed.segments[index] = items.length;
+		window.__demoDanmakuServed.items += items.length;
+		return encodeDanmakuSeg(items);
 	}
 
 	/** 读取弹幕文件（.xml / .json），解析后让播放器重新拉取弹幕 */
@@ -657,7 +751,7 @@
 		setStatus('正在准备播放器…');
 		teardown();
 
-		probeDuration(url, type).then(function (duration) {
+		probeDuration(url, type, state.source, state.size).then(function (duration) {
 			state.duration = duration;
 			// 播放器要的全局数据
 			window.__INITIAL_STATE__ = buildInitialState(name, type, duration);
@@ -775,8 +869,10 @@
 			}
 		}
 		localObjectURL = URL.createObjectURL(file);
+		state.source = file;
+		state.size = file.size || 0;
 		var type = guessType(file.name || '', 'auto');
-		setStatus('正在用本地文件播放：' + (file.name || '未命名') + '（' + type + ' 链路）');
+		setStatus('正在用本地文件播放：' + (file.name || '未命名') + '（' + type + ' 链路，' + Math.round((file.size || 0) / 1048576) + ' MB）');
 		// 本地文件不需要写回地址框，避免把文件名当成地址
 		startPlayback(localObjectURL, type);
 	};
