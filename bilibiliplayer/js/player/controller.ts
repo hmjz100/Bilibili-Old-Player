@@ -1689,6 +1689,8 @@ class Controller {
                 jumpFunc: () => {
                     player.config.t = 0 + 's';
                     player.interactiveVideoConfig!.portal = 1;
+                    // 用户选择了跳到自己的观看进度：X 掉片头跳过提示，避免它再抢一次跳转
+                    this.progressBar?.cancelSkipSegments();
                     player.reloadMedia.cidLoader({
                         aid: player.config.aid,
                         cid: lastcid,
@@ -1772,6 +1774,8 @@ class Controller {
                                     this.player.config.hasNext = true;
                                 }
                             }
+                            // 用户选择了跳到自己的观看进度：X 掉片头跳过提示，避免它再抢一次跳转
+                            this.progressBar?.cancelSkipSegments();
                             player.reloadMedia.cidLoader({
                                 aid: partInfo.aid,
                                 cid: partInfo.cid,
@@ -1806,6 +1810,8 @@ class Controller {
                         }
                     },
                     jumpFunc: () => {
+                        // 用户选择了跳到自己的观看进度：X 掉片头跳过提示，避免它再抢一次跳转
+                        this.progressBar?.cancelSkipSegments();
                         player.seek(time / 1000, STATE.SEEK_TYPE.TOAST);
                     },
                 });

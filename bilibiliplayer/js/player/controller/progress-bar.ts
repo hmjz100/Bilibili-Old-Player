@@ -287,6 +287,14 @@ export class ProgressBar {
 			this.skipSegments = new SkipSegments(this.player, skipSegments);
 		}
 	}
+	/**
+	 * 取消待跳转的片头片尾提示。
+	 * 用户点了别的跳转（例如「跳转播放」去自己的观看进度）时调用，
+	 * 否则片头提示的倒计时到点后会把用户刚跳到的位置又顶掉。
+	 */
+	cancelSkipSegments() {
+		this.skipSegments?.cancel();
+	}
 	updateVideoTime(current: number, total?: number) {
 		const player = this.player;
 		const controller = this.controller;

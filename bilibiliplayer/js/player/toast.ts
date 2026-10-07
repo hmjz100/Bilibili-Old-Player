@@ -3,7 +3,6 @@ import Player from '../player';
 interface ITimerInfoInterface {
     errorInfoId: number[];
     topId: number[];
-    bottomId?: number;
 }
 export interface IItemInterface {
     item: JQuery;
@@ -18,8 +17,6 @@ class Toast {
     private timeout = 5000;
     private timerInfo: ITimerInfoInterface = { errorInfoId: [], topId: [] };
     private topTimeoutIndex: number = 0;
-    private restTime: number | null = null;
-    private restTimeShow: boolean = true;
     private isPay = false;
     private payPermanent = false;
     domNodes: { [key: string]: JQuery } = {};
@@ -178,7 +175,15 @@ class Toast {
             return;
         }
         let rest: JQuery | null = null;
-        const that = this;
+        /**
+         * 本条消息**自己的**定时器句柄。
+         * 底部消息是层叠（可同时存在多条）的，超时/关闭必须各管各的——
+         * 否则后一条消息的 clearTimeout 会把前一条的自动消失给掐掉。
+         */
+        let timerId = 0;
+        /** 倒计时秒数：放在局部变量里，避免多条消息共用实例字段互相串味 */
+        let restTime = Number(obj.restTime) || 0;
+        const restTimeShow = obj.restTimeShow !== false;
         const jumpClass = obj.theme ? `${this.prefix}-${obj.theme}` : '';
         const item = $(`<div class="${this.prefix}-video-toast-item"></div>`);
         const text = $(`<div class="${this.prefix}-video-toast-item-text"></div>`);
@@ -186,15 +191,15 @@ class Toast {
         const successCallback = obj.successCallback || function () { };
         const defaultCallback = obj.defaultCallback || function () { };
         const stop = (close = false) => {
-            clearTimeout(this.timerInfo.bottomId);
+            clearTimeout(timerId);
             item.off('mouseenter mouseleave');
             item.animate({ opacity: 0 }, 300, () => item.remove());
             defaultCallback(close);
         };
         const waiting = (successCallback: Function, defaultCallback: Function) => {
-            this.timerInfo.bottomId = window.setTimeout(() => {
-                if (--this.restTime! >= 0) {
-                    rest!.html(this.restTime!.toString());
+            timerId = window.setTimeout(() => {
+                if (--restTime >= 0) {
+                    rest!.html(restTime.toString());
                     waiting(successCallback, defaultCallback);
                 } else {
                     stop();
@@ -208,7 +213,6 @@ class Toast {
             stop();
             typeof obj.jumpFunc === 'function' && obj.jumpFunc();
         });
-        clearTimeout(this.timerInfo.bottomId);
         if (obj.closeButton) {
             const close = $(`<div class="${this.prefix}-video-toast-item-close ${jumpClass}"><i class="${this.prefix}-iconfont icon-close"></i></div>`);
             close.attr('title', '关闭');
@@ -217,24 +221,20 @@ class Toast {
             });
             item.append(close);
             if (!obj.restTime) {
-                this.timerInfo.bottomId = window.setTimeout(stop, obj.timeout || this.timeout);
+                timerId = window.setTimeout(stop, obj.timeout || this.timeout);
             }
         }
         if (obj.restTime) {
-            this.restTime = obj.restTime;
-            if (obj.restTimeShow === false) {
-                this.restTimeShow = obj.restTimeShow;
-            }
-            if (this.restTimeShow) {
-                rest = $(`<em>${this.restTime}</em>`);
+            if (restTimeShow) {
+                rest = $(`<em>${restTime}</em>`);
                 rest.prependTo(text);
             } else {
-                rest = $(`<em style="display:none;">${this.restTime}</em>`);
+                rest = $(`<em style="display:none;">${restTime}</em>`);
                 rest.prependTo(text);
             }
             item.on({
                 mouseenter: function () {
-                    clearTimeout(that.timerInfo.bottomId);
+                    clearTimeout(timerId);
                 },
                 mouseleave: function () {
                     waiting(successCallback, defaultCallback);
@@ -248,7 +248,8 @@ class Toast {
             item.css({ 'margin-bottom': '10px', display: 'inline-block' });
             this.domNodes.bottomArea.prepend(item);
         } else {
-            this.domNodes.bottomArea.empty().append(item);
+            // 层叠显示：只追加、不清空底部区域，让多条消息可以同时存在、各自超时
+            this.domNodes.bottomArea.append(item);
         }
         return {
             item: item,

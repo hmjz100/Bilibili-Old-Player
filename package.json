@@ -4,8 +4,8 @@
 	"author": "Hmjz100",
 	"scripts": {
 		"tsc": "tsc -p ./tsconfig.json  --noEmit --removeComments",
-		"build": "npm update && node .vscode/esbuild.mjs",
-		"build-as3-danmaku": "node ./as3-danmaku/build.mjs"
+		"build-as3-danmaku": "node ./as3-danmaku/build.mjs",
+		"build": "node ./as3-danmaku/build.mjs && node .vscode/esbuild.mjs"
 	},
 	"dependencies": {
 		"@jsc/ace": "file:ace",

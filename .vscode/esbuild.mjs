@@ -1,11 +1,16 @@
 import pkg from '../package.json' with { type: 'json' };
 import esbuild from 'esbuild';
 import fs from 'fs-extra';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { exec } from 'child_process';
 
 const version = pkg.version;
 console.log("Building Player...");
 console.log("Version: ", version);
+
+/** 项目根目录（本文件位于 <root>/.vscode/ 下） */
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
  * 获取项目的 `commit` 哈希值
@@ -52,4 +57,4 @@ esbuild.build({
 		'.eot': 'dataurl',
 		'.xml': 'dataurl'
 	}
-}).then(d => fs.promises.rm('as3-danmaku/host/worker.js'))
+}).then(d => fs.promises.rm(path.join(root, 'as3-danmaku/host/worker.js')))

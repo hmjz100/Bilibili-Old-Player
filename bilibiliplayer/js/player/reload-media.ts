@@ -202,11 +202,14 @@ export class ReloadMedia {
 						Number(result.bp) !== 1 &&
 						!result.hasPaid;
 					that.player._setVideoQuality(result.quality);
+					// 必须先把当前画质同步为本次切换的目标，再刷新清晰度 UI：
+					// `updateQuality()` 内部是用 `player.videoQuality` 重绘下拉框的，
+					// 否则整链路重载（大会员画质）切换后下拉框会退回切换前的旧画质
+					that.player.videoQuality = parseInt(<any>value, 10);
 					that.player.controller.updateQuality(result, value);
 
 					let seekType = 'range';
 
-					that.player.videoQuality = parseInt(<any>value, 10);
 					that.player.mediaDataSource = result.mediaDataSource;
 					if (result.mediaDataSource['type'] === 'flv') {
 						const segments = result.mediaDataSource['segments'];

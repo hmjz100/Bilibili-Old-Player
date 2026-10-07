@@ -56,6 +56,8 @@ export class As3Danmaku {
     protected sTime = 0;
     /** 初始化标记 */
     protected inited = false;
+    /** 渲染循环是否已调度（`requestAnimationFrame` 不保证在页面隐藏时触发，故需显式记录） */
+    protected rendering = false;
     /** 弹幕列表 */
     protected dmList: IDanmaku[] = [];
     /** 当前显示弹幕列表 */
@@ -98,6 +100,9 @@ export class As3Danmaku {
             this.inited = true;
             this.wrap = document.createElement('div');
             this.wrap.classList.add('as3-danmaku');
+            if (this.paused) {
+                this.wrap.classList.add('as3-danmaku-pause');
+            }
             this.container.appendChild(this.wrap);
             this.scriptContext = new ScriptingContext(this);
 
@@ -105,9 +110,7 @@ export class As3Danmaku {
                 this.resize();
             }
 
-            window['requestAnimationFrame'](() => {
-                this.render();
-            });
+            this.startRender();
 
             document.addEventListener('visibilitychange', e => {
                 if (!document.hidden) {
@@ -134,6 +137,9 @@ export class As3Danmaku {
         if (dms.length) {
             this.worker || this.InitWorker();
             this.sendWorkerMessage('::parse', dms);
+            // 弹幕列表由空变为非空时必须拉起渲染循环
+            // （`play()` 时列表可能还是空的，此时不会再有机会启动循环）
+            this.startRender();
         }
     }
     /** 移除弹幕 */
@@ -292,12 +298,31 @@ export class As3Danmaku {
     }
     /** 渲染流程 */
     protected render() {
-        if (!this.paused && (this.dmList.length || this.preList.length)) {
-            window['requestAnimationFrame'](() => {
-                this.render();
-            });
-            this.renderDanmaku();
+        if (this.paused) {
+            // 暂停时不再调度下一帧，由 `startRender()` 在恢复时重新拉起
+            this.rendering = false;
+            return;
         }
+        window['requestAnimationFrame'](() => {
+            this.render();
+        });
+        this.renderDanmaku();
+    }
+    /**
+     * 启动渲染循环（幂等）
+     *
+     * 与 `bas-danmaku` 不同，代码弹幕的列表可能在后台上场后才加载完毕，
+     * 若只在 `play()` 时按列表长度决定是否启动循环，循环会永久停摆：
+     * 已在场的弹幕陆续播完后便再也没有新弹幕被绘制（表现为弹幕整体消失）。
+     */
+    protected startRender() {
+        if (this.rendering || this.paused) {
+            return;
+        }
+        this.rendering = true;
+        window['requestAnimationFrame'](() => {
+            this.render();
+        });
     }
     /** 渲染弹幕 */
     protected renderDanmaku() {
@@ -326,6 +351,8 @@ export class As3Danmaku {
     }
     /** 提取需要显示的弹幕列表 */
     refreshCdmList() {
+        // 此处会被 `render()` 每帧调用，`startRender()` 幂等，可在循环意外停摆后自愈
+        this.startRender();
         if (!this.visibleStatus) {
             this.clear();
             return;
@@ -356,15 +383,16 @@ export class As3Danmaku {
         this.startTime = new Date().getTime();
         this.pauseTime = 0;
         this.paused = false;
-        this.wrap && this.wrap.classList.remove('as3-danmaku-pause');
         if (this.dmList.length || this.preList.length) {
             this.inited || this.init();
-            this.render();
-            this.sendWorkerMessage('Update:TimeUpdate', {
-                state: 'playing',
-                time: this.cTime
-            });
         }
+        this.wrap && this.wrap.classList.remove('as3-danmaku-pause');
+        // 无论此刻是否已有弹幕，都要拉起循环并同步沙箱状态
+        this.startRender();
+        this.sendWorkerMessage('Update:TimeUpdate', {
+            state: 'playing',
+            time: this.cTime
+        });
     }
     /** 暂停 */
     pause() {
@@ -398,13 +426,14 @@ export class As3Danmaku {
 
             this.clear();
         }
+        this.startRender();
     }
     /** 开关弹幕 */
     visible(value: boolean) {
         if (value !== this.visibleStatus) {
             if (value) {
                 this.visibleStatus = true;
-                this.render();
+                this.startRender();
             } else {
                 this.visibleStatus = false;
                 this.clear();

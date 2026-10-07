@@ -287,7 +287,10 @@ class Quality {
 					});
 				}
 			});
-			this.qualitymenu.value(player.videoQuality, false);
+			// 用本次传入的“当前画质”重绘下拉框，而非全局的 `player.videoQuality`：
+			// 某些调用方（如切换大会员画质的整链路重载）会在刷新 UI 之后才更新该字段，
+			// 若读全局值会把下拉框显示退回切换前的旧画质
+			this.qualitymenu.value(nowQuality!, false);
 
 			// safari hack
 			if (browser.version.iOS && !that.qualityMenu.find('iframe').length) {

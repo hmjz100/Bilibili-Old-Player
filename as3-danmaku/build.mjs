@@ -1,5 +1,10 @@
 import esbuild from 'esbuild';
 import fs from 'fs-extra';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// 不依赖工作目录，始终以本文件所在目录为基准
+const root = path.dirname(fileURLToPath(import.meta.url));
 
 const banner = `import worker from '@jsc/danmaku/worker-loader/inline';
 
@@ -22,7 +27,7 @@ const plugin = {
 };
 
 esbuild.build({
-	entryPoints: ["./worker/Worker.ts"],
+	entryPoints: [path.join(root, 'worker/Worker.ts')],
 	target: "es2015",
 	format: "iife",
 	charset: "utf8",
@@ -34,5 +39,5 @@ esbuild.build({
 	plugins: [
 		plugin
 	],
-	outfile: './host/worker.js'
+	outfile: path.join(root, 'host/worker.js')
 })
