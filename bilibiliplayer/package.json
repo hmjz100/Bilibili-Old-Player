@@ -7,16 +7,16 @@
   "license": "MIT",
   "dependencies": {
     "hammerjs": "^2.0.8",
-    "jszip": "^3.10.1",
+    "jszip": "^3.10.2",
     "konva": "^8.3.12",
     "pako": "^2.0.4",
     "popmotion": "^11.0.5",
     "stylefire": "^7.0.3",
-    "three": "^0.144.0"
+    "three": "^0.186.1"
   },
   "devDependencies": {
-    "@types/hammerjs": "^2.0.41",
+    "@types/hammerjs": "^2.0.46",
     "@types/pako": "^2.0.0",
-    "@types/three": "^0.144.0"
+    "@types/three": "^0.186.0"
   }
 }
