@@ -37,13 +37,11 @@ jobs:
         run: npm run build
 
       - name: 准备演示页
-        # 内置 jQuery 与 hls.js 到 public/vendor，并把播放器产物拷进 public
         run: |
           node public/build-demo.mjs
           touch public/.nojekyll
 
       - name: 推送到展示分支（gh-pages）
-        # 编译产物只进展示分支，dev 分支保持干净
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

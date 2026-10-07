@@ -2,7 +2,7 @@
  * 准备 GitHub Pages 的发布目录。
  *
  * 做两件事：
- *   1. 把宿主页面必须自己提供的 jQuery 拷到 public/vendor/
+ *   1. 把宿主页面必须自己提供的 jQuery 拷到 public
  *      —— 播放器产物不含 jQuery，而国内访问 CDN 很不可靠，所以一律内置；
  *   2. 把播放器构建产物（dist/video.js、dist/video.css）拷进 public/。
  *
@@ -42,12 +42,9 @@ function resolvePackageFile(pkg, relative) {
 	return null;
 }
 
-const vendor = path.join(here, 'vendor');
-fs.mkdirSync(vendor, { recursive: true });
-
 const missing = [];
 const tasks = [
-	{ name: 'jquery.min.js', pkg: 'jquery', relative: 'dist/jquery.min.js', required: true, to: path.join(vendor, 'jquery.min.js') },
+	{ name: 'jquery.min.js', pkg: 'jquery', relative: 'dist/jquery.min.js', required: true, to: path.join(here, 'jquery.min.js') },
 	{ name: 'video.js', from: path.join(root, 'dist/video.js'), required: true, to: path.join(here, 'video.js') },
 	{ name: 'video.css', from: path.join(root, 'dist/video.css'), required: true, to: path.join(here, 'video.css') },
 ];

@@ -6,4 +6,3 @@ as3-danmaku/host/worker.js
 # 构建产物
 dist
 public/video*
-public/vendor

@@ -912,7 +912,7 @@
 
 	function start() {
 		if (!window.jQuery) {
-			setStatus('缺少 jQuery：请先执行 node public/build-demo.mjs 准备 public/vendor（播放器不会自带全局 $）', 'error');
+			setStatus('缺少 jQuery：请先执行 node public/build-demo.mjs 准备演示文件', 'error');
 			return;
 		}
 		if (!window.EmbedPlayer) {
