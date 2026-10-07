@@ -19,15 +19,14 @@
 			<button id="demo-error-close" type="button" title="关闭" onclick="window.demoPlayerCloseError && window.demoPlayerCloseError()">✕</button>
 		</div>
 		<h1>Bilibili-Old 演示 - 重构播放器</h1>
-		<div class="tip">输入视频链接，或直接选择本地文件，即可享用本仓库的重构哔哩哔哩经典播放器播放视频。</div>
+		<div class="tip">输入视频链接，或将地址留空并选择“加载”以选择本地文件，即可享用本仓库的重构哔哩哔哩经典播放器播放视频。</div>
 		<div class="tip">
 			</p>地址也可通过 <code>?url=</code> 直接指定；视频链接需要目标服务器允许跨域（CORS），否则取不到流。</div>
 
 		<div class="row">
 			<span class="label">视频</span>
 			<input id="demo-vd-url" type="text" placeholder="视频地址" spellcheck="false">
-			<button id="demo-vd-load" class="primary" type="button">播放</button>
-			<button id="demo-pick" type="button">本地</button>
+			<button id="demo-vd-load" class="primary" type="button">加载</button>
 			<button id="demo-clear-video" type="button" title="移除视频">✕</button>
 			<input id="demo-vd-file" type="file" hidden accept="video/*,audio/*,.mp4,.m4v,.mov,.flv,.ts,.mkv,.webm,.mp3,.m4a,.aac,.flac,.wav,.opus">
 		</div>
@@ -36,7 +35,6 @@
 			<span class="label">弹幕</span>
 			<input id="demo-dm-url" type="text" placeholder="弹幕地址" spellcheck="false">
 			<button id="demo-dm-load" class="primary" type="button">加载</button>
-			<button id="demo-dm" type="button">本地</button>
 			<button id="demo-clear-dm" type="button" title="移除弹幕">✕</button>
 			<input id="demo-dm-file" type="file" hidden accept=".xml,.json,application/xml,application/json">
 		</div>
