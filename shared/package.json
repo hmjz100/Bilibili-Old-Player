@@ -10,7 +10,7 @@
     "md5": "^2.3.0"
   },
   "devDependencies": {
-    "@types/events": "^3.0.0",
-    "@types/md5": "^2.3.2"
+    "@types/events": "^3.0.3",
+    "@types/md5": "^2.3.6"
   }
 }
