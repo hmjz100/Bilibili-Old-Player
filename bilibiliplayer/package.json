@@ -17,6 +17,6 @@
   "devDependencies": {
     "@types/hammerjs": "^2.0.41",
     "@types/pako": "^2.0.0",
-    "@types/three": "^0.144.0"
+    "@types/three": "^0.186.0"
   }
 }
