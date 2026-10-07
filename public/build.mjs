@@ -50,7 +50,7 @@ fs.mkdirSync(styles, { recursive: true });
 
 const missing = [];
 const tasks = [
-	{ name: 'jquery.min.js', pkg: 'jQuery', relative: 'dist/jquery.min.js', to: path.join(scripts, 'jquery.min.js') },
+	// { name: 'jquery.min.js', pkg: 'jQuery', relative: 'dist/jquery.min.js', to: path.join(scripts, 'jquery.min.js') },
 	{ name: 'video.js', pkg: 'Player', from: path.join(root, 'dist/video.js'), to: path.join(scripts, 'video.js') },
 	{ name: 'video.css', pkg: 'Player style', from: path.join(root, 'dist/video.css'), to: path.join(styles, 'video.css') },
 ];
