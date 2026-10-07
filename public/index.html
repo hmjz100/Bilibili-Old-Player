@@ -22,9 +22,81 @@
 		}
 
 		.wrap {
-			max-width: 1160px;
+			max-width: 1240px;
 			margin: 0 auto;
 			padding: 20px 16px 48px;
+		}
+
+		/* 两行输入（视频 / 弹幕）：输入框 + 按钮 + 右侧清除按钮 */
+		.row {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			align-items: center;
+			margin-bottom: 8px;
+		}
+
+		.row .label {
+			flex: 0 0 44px;
+			color: #9aa4b2;
+			font-size: 13px;
+		}
+
+		.row input[type="text"] {
+			flex: 1 1 420px;
+			min-width: 220px;
+			padding: 8px 10px;
+			border: 1px solid #2f3238;
+			border-radius: 6px;
+			background: #1f2126;
+			color: inherit;
+			font: inherit;
+		}
+
+		.row select,
+		.row button {
+			padding: 8px 14px;
+			border: 1px solid #2f3238;
+			border-radius: 6px;
+			background: #26282e;
+			color: inherit;
+			font: inherit;
+			cursor: pointer;
+			white-space: nowrap;
+		}
+
+		.row button.primary {
+			border-color: #00a1d6;
+			background: #00a1d6;
+			color: #fff;
+		}
+
+		.row button:hover {
+			border-color: #00a1d6;
+		}
+
+		/* 清除按钮：一个小 × */
+		.row button.clear {
+			flex: 0 0 auto;
+			width: 34px;
+			padding: 8px 0;
+			color: #9aa4b2;
+			line-height: 1;
+			text-align: center;
+		}
+
+		.row button.clear:hover {
+			color: #ef9a9a;
+			border-color: #d63a3a;
+		}
+
+		/* 旧版 .bar 选择器保留兼容 */
+		.bar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 8px;
+			align-items: center;
+			margin-bottom: 10px;
 		}
 
 		h1 {
@@ -127,11 +199,13 @@
 			color: #ef9a9a;
 		}
 
-		/* 播放器容器：保持 16:9，播放器会把 #bofqi 内部接管掉 */
+		/* 播放器容器：与主站一致的比例（1160×720），居中并按可用宽度等比放大 */
 		.player {
 			position: relative;
 			width: 100%;
-			aspect-ratio: 16 / 9;
+			max-width: 1160px;
+			margin: 0 auto;
+			aspect-ratio: 1160 / 720;
 			background: #000;
 			border-radius: 6px;
 			overflow: hidden;
@@ -189,8 +263,9 @@
 			用本仓库重构的 B 站经典播放器播放（m3u8 由 hls.js 接管）。
 		</p>
 
-		<div class="bar">
-			<input id="demo-url" type="text" placeholder="https://example.com/video.mp4" spellcheck="false">
+		<div class="row">
+			<span class="label">视频</span>
+			<input id="demo-url" type="text" placeholder="视频地址：mp4 / flv / m3u8（也可以选择或拖入本地文件）" spellcheck="false">
 			<select id="demo-type" title="类型（默认按扩展名自动判断）">
 				<option value="auto">自动</option>
 				<option value="mp4">原生（mp4 / mp3 等）</option>
@@ -198,10 +273,18 @@
 				<option value="m3u8">m3u8</option>
 			</select>
 			<button id="demo-play" class="primary" type="button">播放</button>
-			<button id="demo-pick" type="button">选择本地文件</button>
-			<button id="demo-dm" type="button">选择弹幕文件</button>
+			<button id="demo-pick" type="button">本地文件</button>
+			<button id="demo-clear-video" class="clear" type="button" title="移除视频">✕</button>
 			<input id="demo-file" type="file" hidden
 				accept="video/*,audio/*,.mp4,.m4v,.mov,.flv,.m3u8,.ts,.mkv,.webm,.mp3,.m4a,.aac,.flac,.wav,.opus">
+		</div>
+
+		<div class="row">
+			<span class="label">弹幕</span>
+			<input id="demo-dm-url" type="text" placeholder="弹幕地址：xml / json（也可以选择或拖入本地弹幕文件）" spellcheck="false">
+			<button id="demo-dm-load" class="primary" type="button">加载弹幕</button>
+			<button id="demo-dm" type="button">弹幕文件</button>
+			<button id="demo-clear-dm" class="clear" type="button" title="移除弹幕">✕</button>
 			<input id="demo-dm-file" type="file" hidden accept=".xml,.json,application/xml,application/json">
 		</div>
 
@@ -209,7 +292,7 @@
 			<span>示例：</span>
 			<button type="button" data-url="https://www.w3schools.com/html/mov_bbb.mp4">mp4</button>
 			<button type="button" data-url="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">m3u8</button>
-			<span>（弹幕支持 B 站 xml 与 json，视频与弹幕文件都可以拖进播放器区域）</span>
+			<span>（弹幕支持 B 站 xml 与 json；视频与弹幕文件都可以拖进播放器区域）</span>
 		</div>
 
 		<p id="demo-status" class="demo-status">正在准备…</p>
@@ -265,6 +348,25 @@
 				if (dmFile.files && dmFile.files[0]) {
 					window.demoPlayerDanmakuFile(dmFile.files[0]);
 				}
+			});
+			// 弹幕地址（xml / json）
+			document.getElementById('demo-dm-load').addEventListener('click', function () {
+				var u = (document.getElementById('demo-dm-url').value || '').trim();
+				if (u) {
+					window.demoPlayerDanmakuUrl(u);
+				}
+			});
+			document.getElementById('demo-dm-url').addEventListener('keydown', function (e) {
+				if (e.key === 'Enter') {
+					document.getElementById('demo-dm-load').click();
+				}
+			});
+			// 两行的清除按钮
+			document.getElementById('demo-clear-video').addEventListener('click', function () {
+				window.demoPlayerClearVideo();
+			});
+			document.getElementById('demo-clear-dm').addEventListener('click', function () {
+				window.demoPlayerClearDanmaku();
 			});
 			Array.prototype.forEach.call(document.querySelectorAll('.samples button'), function (btn) {
 				btn.addEventListener('click', function () {

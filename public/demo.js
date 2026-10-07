@@ -698,48 +698,76 @@
 		return encodeDanmakuSeg(items);
 	}
 
-	/** 读取弹幕文件（.xml / .json），解析后让播放器重新拉取弹幕 */
+	/** 弹幕文本 -> 装入播放器（xml / json 自动判断） */
+	function setDanmakuFromText(text, name) {
+		var isJson = /\.json$/i.test(name || '') || /^\s*[[{]/.test(text);
+		var items = isJson ? parseDanmakuJson(text) : parseDanmakuXml(text);
+		if (!items.length) {
+			setStatus('弹幕里没有解析到内容：' + name, 'warn');
+			return;
+		}
+		danmaku.items = items;
+		danmaku.name = name || 'danmaku';
+		servedSegments = {};
+		if (!state.url) {
+			setStatus('弹幕已就绪（' + items.length + ' 条），播放视频时会自动装入', 'ok');
+			return;
+		}
+		// 播放器只在初始化时拉弹幕，所以重新起播一次
+		var at = 0;
+		try {
+			at = window.player && window.player.getCurrentTime ? window.player.getCurrentTime() : 0;
+		} catch (e) {
+			at = 0;
+		}
+		setStatus('已解析 ' + items.length + ' 条弹幕（' + danmaku.name + '），正在重新载入播放器…');
+		boot();
+		if (at > 1) {
+			setTimeout(function () {
+				try {
+					window.player.seek(at);
+				} catch (e) {
+					/* 忽略 */
+				}
+			}, 6000);
+		}
+	}
+
+	/** 读取弹幕文件（.xml / .json） */
 	function setDanmakuFromFile(file) {
 		if (!file) {
 			return;
 		}
 		var name = file.name || 'danmaku';
-		var isJson = /\.json$/i.test(name);
 		setStatus('正在读取弹幕文件：' + name + ' …');
 		file.text()
 			.then(function (text) {
-				var items = isJson ? parseDanmakuJson(text) : parseDanmakuXml(text);
-				if (!items.length) {
-					setStatus('弹幕文件里没有解析到弹幕：' + name, 'warn');
-					return;
-				}
-				danmaku.items = items;
-				danmaku.name = name;
-				if (!state.url) {
-					setStatus('弹幕已就绪（' + items.length + ' 条），播放视频时会自动装入', 'ok');
-					return;
-				}
-				// 播放器的弹幕只在初始化时拉取，所以重新起播一次让它带上弹幕
-				var at = 0;
-				try {
-					at = window.player && window.player.getCurrentTime ? window.player.getCurrentTime() : 0;
-				} catch (e) {
-					at = 0;
-				}
-				setStatus('已解析 ' + items.length + ' 条弹幕（' + name + '），正在重新载入播放器…');
-				boot();
-				if (at > 1) {
-					setTimeout(function () {
-						try {
-							window.player.seek(at);
-						} catch (e) {
-							/* 忽略 */
-						}
-					}, 6000);
-				}
+				setDanmakuFromText(text, name);
 			})
 			.catch(function (e) {
-				setStatus('弹幕文件读取或解析失败：' + (e && e.message ? e.message : e), 'error');
+				setStatus('弹幕文件读取失败：' + (e && e.message ? e.message : e), 'error');
+			});
+	}
+
+	/** 从地址加载弹幕（xml / json） */
+	function setDanmakuFromUrl(url) {
+		if (!url) {
+			return;
+		}
+		var name = url.split('/').pop().split('?')[0] || 'danmaku';
+		setStatus('正在下载弹幕：' + url + ' …');
+		fetch(url)
+			.then(function (r) {
+				if (!r.ok) {
+					throw new Error('HTTP ' + r.status);
+				}
+				return r.text();
+			})
+			.then(function (text) {
+				setDanmakuFromText(text, name);
+			})
+			.catch(function (e) {
+				setStatus('弹幕下载失败（需要目标服务器允许跨域）：' + (e && e.message ? e.message : e), 'error');
 			});
 	}
 
@@ -877,8 +905,63 @@
 		startPlayback(localObjectURL, type);
 	};
 
-	/** 只加载弹幕文件（页面上的“选择弹幕”按钮走这里） */
+	/** 只加载弹幕文件（页面上的“弹幕文件”按钮走这里） */
 	window.demoPlayerDanmakuFile = setDanmakuFromFile;
+
+	/** 从地址加载弹幕（xml / json 链接） */
+	window.demoPlayerDanmakuUrl = setDanmakuFromUrl;
+
+	/** 移除弹幕：清空列表并让播放器重新起播（弹幕只在初始化时装载） */
+	window.demoPlayerClearDanmaku = function () {
+		danmaku.items = [];
+		danmaku.name = '';
+		servedSegments = {};
+		var dmUrl = document.getElementById('demo-dm-url');
+		if (dmUrl) {
+			dmUrl.value = '';
+		}
+		var dmFile = document.getElementById('demo-dm-file');
+		if (dmFile) {
+			dmFile.value = '';
+		}
+		setStatus('已移除弹幕，正在重新载入播放器…');
+		if (state.url) {
+			boot();
+		} else {
+			setStatus('已移除弹幕', 'ok');
+		}
+	};
+
+	/** 移除视频：拆掉播放器并清空状态 */
+	window.demoPlayerClearVideo = function () {
+		teardown();
+		state.url = '';
+		state.type = 'mp4';
+		state.duration = 0;
+		state.source = null;
+		state.size = 0;
+		if (localObjectURL) {
+			try {
+				URL.revokeObjectURL(localObjectURL);
+			} catch (e) {
+				/* 忽略 */
+			}
+			localObjectURL = '';
+		}
+		var input = document.getElementById('demo-url');
+		if (input) {
+			input.value = '';
+		}
+		var file = document.getElementById('demo-file');
+		if (file) {
+			file.value = '';
+		}
+		var bofqi = document.getElementById('bilibili-player') || document.getElementById('bofqi');
+		if (bofqi) {
+			bofqi.innerHTML = '';
+		}
+		setStatus('已移除视频，可以重新输入地址或选择本地文件', 'ok');
+	};
 
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', start);
