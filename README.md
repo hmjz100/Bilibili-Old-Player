@@ -2,6 +2,7 @@
 <img width="90" src="bilibiliplayer/images/ploading.gif" style="background:white" alt="logo">
 
 # Bilibili-Old Player (Classic)
+### 经典焕新生
 [哔哩哔哩弹幕网](//www.bilibili.com) 于 2019 年 12 月 09 日弃用的经典播放器。  
 年旧失修，残破不堪。为了便于长期维护，使用 `TypeScript` 进行了重构。
 </div>
@@ -9,7 +10,7 @@
 ## 说明  
 基于 [`video.min.js`](//static.hdslb.com/js/video.min.js)、[`bilibiliPlayer.min.js`](//static.hdslb.com/player/js/bilibiliPlayer.min.js) 等原文件，参考 [`jsc-player(2.x)`](//s1.hdslb.com/bfs/static/player/main/video.js) 和 [`bpx-player(3.x)`](https://s1.hdslb.com/bfs/static/player/main/core.js) 系列，擅自揣测了各被混淆的类、方法、属性名……改写为了 ts 代码并补充了类型声明，还移植了一些新功能。
 
-## TODO
+## 功能 TODO
 - [x] protobuf 弹幕
 - [x] 实时弹幕
 - [x] 杜比视界
@@ -32,6 +33,7 @@
 - [x] 反查弹幕发送者
 - [x] 代码弹幕
 - [x] AI 字幕标识
+- [x] `智能修复` 画质
 
 ## 食用方法
 ### 一般用法
@@ -45,10 +47,11 @@
 ### 在线演示
 <https://hmjz100.github.io/Bilibili-Old-Player/>
 
-直接输入 `mp4`、`flv`、`m3u8` 直链即可试播；也可以直接**选择本地文件或拖进播放器区域**，`mp4`、`mp3`、`flv` 等能播的都会播。
-`flv` 与 `m3u8` 需要目标服务器允许跨域（CORS），否则取不到流；播放器本身不支持 HLS，`m3u8` 由 hls.js 接管播放器的 `video` 元素。
-演示页源码在本仓库 `public/` 目录，产物会内置 jQuery 与 hls.js（由 `node public/build-demo.mjs` 生成）。
-部署方式：工作流编译完成后把 `public/` 推送到独立的 `gh-pages` 分支（不动 `dev` 分支），GitHub Pages 从该分支对外展示。
+直接输入 `mp4`、`flv`、`m3u8` 等视频链接即可在线播放；也可以直接选择本地文件播放。  
+在线播放需要目标服务器允许跨域（CORS），否则播放器将无法取到视频流；  
+播放器本身不支持 HLS，`m3u8` 格式由 hls.js 接管。  
+演示页源码在本仓库 `public/` 目录，产物会内置 jQuery 与 hls.js。  
+部署方式：工作流编译完成后会自动将 `public/` 推送到独立的 `gh-pages` 分支，GitHub Pages 从该分支对外展示。
 
 ### Bilibili-Old
 使用基于本项目的 [Bilibili-Old](https://github.com/hmjz100/Bilibili-Old) 扩展或用户脚本。  
