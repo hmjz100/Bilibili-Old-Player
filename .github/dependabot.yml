@@ -1,14 +1,69 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
-
+# Dependabot 版本更新配置
+# 配置项文档：https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+#
+# 说明：本仓库根目录用 pnpm 工作区管理，根目录的锁文件未提交（被 .gitignore 忽略），
+# 因此根目录用 increase 策略，让 package.json 里的版本范围被真正抬高；
+# bilibiliplayer、flv.js、player-auxiliary、shared 这四个子包提交了各自的 package-lock.json，
+# 会连带锁文件一起更新，合并后请在本地执行一次 pnpm install 刷新 pnpm-lock.yaml。
 version: 2
 updates:
-  # Enable version updates for npm
+  # 根目录依赖
   - package-ecosystem: "npm"
-    # Look for `package.json` and `lock` files in the `root` directory
     directory: "/"
-    # Check the npm registry for updates every week
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    versioning-strategy: "increase"
+    # 前缀末尾的空格用于阻止 Dependabot 自动补一个半角冒号
+    commit-message:
+      prefix: "更新： "
+    # 次要/补丁更新合并成一个 PR；重大更新不列入分组，仍然逐个单独开 PR 便于确认
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      development-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+    ignore:
+      # 工作区内的本地依赖（file:），由本仓库自行维护，无需版本更新
+      - dependency-name: "@jsc/*"
+      - dependency-name: "@shared/*"
+
+  # 有独立依赖的子包（各自提交了 package-lock.json）
+  - package-ecosystem: "npm"
+    directories:
+      - "/bilibiliplayer"
+      - "/flv.js"
+      - "/player-auxiliary"
+      - "/shared"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    versioning-strategy: "increase"
+    commit-message:
+      prefix: "更新： "
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # 工作流里用到的 Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Asia/Shanghai"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "更新： "
+    groups:
+      actions-minor-and-patch:
+        update-types: ["minor", "patch"]

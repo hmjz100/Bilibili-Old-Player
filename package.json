@@ -53,6 +53,6 @@
 	},
 	"allowScripts": {
 		"file:../../as3-danmaku": true,
-		"esbuild@0.28.2": true
+		"esbuild": true
 	}
 }
