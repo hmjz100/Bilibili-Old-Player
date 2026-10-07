@@ -5,4 +5,6 @@ as3-danmaku/host/worker.js
 
 # 构建产物
 dist
-public/video*
+public/scripts/jquery.min.js
+public/scripts/video.js
+public/styles/video.css

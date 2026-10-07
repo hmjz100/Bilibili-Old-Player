@@ -6,7 +6,7 @@
  *      —— 播放器产物不含 jQuery，而国内访问 CDN 很不可靠，所以一律内置；
  *   2. 把播放器构建产物（dist/video.js、dist/video.css）拷进 public/。
  *
- * 用法：npm run build 之后执行 `node public/build-demo.mjs`
+ * 用法：npm run build 之后执行 `node public/build.mjs`
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,11 +42,17 @@ function resolvePackageFile(pkg, relative) {
 	return null;
 }
 
+const scripts = path.join(here, 'scripts');
+fs.mkdirSync(scripts, { recursive: true });
+
+const styles = path.join(here, 'styles');
+fs.mkdirSync(styles, { recursive: true });
+
 const missing = [];
 const tasks = [
-	{ name: 'jquery.min.js', pkg: 'jquery', relative: 'dist/jquery.min.js', required: true, to: path.join(here, 'jquery.min.js') },
-	{ name: 'video.js', from: path.join(root, 'dist/video.js'), required: true, to: path.join(here, 'video.js') },
-	{ name: 'video.css', from: path.join(root, 'dist/video.css'), required: true, to: path.join(here, 'video.css') },
+	{ name: 'jquery.min.js', pkg: 'jQuery', relative: 'dist/jquery.min.js', to: path.join(scripts, 'jquery.min.js') },
+	{ name: 'video.js', pkg: 'Player', from: path.join(root, 'dist/video.js'), to: path.join(scripts, 'video.js') },
+	{ name: 'video.css', pkg: 'Player style', from: path.join(root, 'dist/video.css'), to: path.join(styles, 'video.css') },
 ];
 
 for (const task of tasks) {
@@ -60,10 +66,10 @@ for (const task of tasks) {
 }
 
 if (missing.length) {
-	const required = tasks.filter((t) => t.required).map((t) => t.name);
-	const missingRequired = missing.filter((m) => required.some((r) => m.startsWith(r)));
+	const _tasks = tasks.map((t) => t.name);
+	const _missing = missing.filter((m) => _tasks.some((r) => m.startsWith(r)));
 	console.log(`\n缺少：${missing.join('、')}`);
-	if (missingRequired.length) {
+	if (_missing.length) {
 		console.error('必要文件缺失，请先执行 `npm run build` 并确保依赖已安装。');
 		process.exit(1);
 	}

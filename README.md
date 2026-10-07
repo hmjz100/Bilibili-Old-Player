@@ -73,3 +73,14 @@ mklink /D dist ..\Bilibili-Old\extension\player
 
 ## License
 [MIT](LICENSE)
+
+
+## 其他版本
+- ?\~2018 HTML5 Player (`0.11.10-a0fd2c52`, `2018-12-25T08:24:45.903Z`)  
+  https://static.hdslb.com/player/js/bilibiliPlayer.beta.min.js
+- ?\~2019 HTML5 Player (`0.11.21-8c739d8a`, `2019-10-30T07:57:34.584Z`)  
+  https://static.hdslb.com/player/js/bilibiliPlayer.min.js
+- 2019\~2022 HTML5 Player (`2.89.0-f5ff168e`, `2022-12-15T08:46:31.527Z`)  
+  https://s1.hdslb.com/bfs/static/player/main/video.js
+- 2022\~至今 NanoPlayer (`4.8.49-rc.8263.0-290e07ff`, `2024-10-16T10:26:15+08:00`)
+https://s1.hdslb.com/bfs/static/player/main/core.6dcbfdb4.js

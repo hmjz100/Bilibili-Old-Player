@@ -522,11 +522,11 @@
 		}
 	}
 
-		/**
-	 * mp4 强制走原生链路
-	 * 播放器构造函数会直接读 window.flvjs.isSupported() 来决定 allowFlv，
-	 * 为 true 时它会按 FLV 去要地址、并拒绝 format 含 mp4 的 playurl。
-	 */
+	/**
+ * mp4 强制走原生链路
+ * 播放器构造函数会直接读 window.flvjs.isSupported() 来决定 allowFlv，
+ * 为 true 时它会按 FLV 去要地址、并拒绝 format 含 mp4 的 playurl。
+ */
 	function forceNativePlayer() {
 		if (window.flvjs && typeof window.flvjs.isSupported === 'function') {
 			window.flvjs.isSupported = function () {
@@ -535,11 +535,11 @@
 		}
 	}
 
-		/**
-	 * 换源前先拆掉上一个播放器。
-	 * GrayManager 是单例且有 initialized 守卫，不重置的话第二次 EmbedPlayer 会直接空转，
-	 * 表现就是「换地址/换文件没反应」。
-	 */
+	/**
+ * 换源前先拆掉上一个播放器。
+ * GrayManager 是单例且有 initialized 守卫，不重置的话第二次 EmbedPlayer 会直接空转，
+ * 表现就是「换地址/换文件没反应」。
+ */
 	function teardown() {
 		try {
 			window.player && window.player.destroy && window.player.destroy();
@@ -865,6 +865,29 @@
 			});
 	}
 
+	/**
+	 * 演示页专用：把误入的迷你播放器扳回普通模式。
+	 * 播放器内部 controller._resize() 以「容器 <480 宽或 <360 高」判定迷你模式，
+	 * 演示页初始化/换源的一瞬间容器可能是 0 尺寸，会被误判，且之后没有 resize 事件就不再纠正
+	 * （表现就是控制栏消失）。这里只在真的处于迷你模式时恢复，不影响宽屏/全屏等其它模式。
+	 */
+	function keepNormalMode() {
+		try {
+			var marked = document.querySelectorAll('.mode-miniscreen');
+			if (!marked.length) {
+				return;
+			}
+			for (var i = 0; i < marked.length; i++) {
+				marked[i].classList.remove('mode-miniscreen');
+			}
+			if (window.player && typeof window.player.mode === 'function') {
+				window.player.mode(0);
+			}
+		} catch (e) {
+			/* 忽略 */
+		}
+	}
+
 	function boot() {
 		var url = state.url;
 		var type = state.type;
@@ -893,7 +916,7 @@
 			installNetworkBridge();
 
 			// 播放器默认会把 http 源改写成 https（enable_ssl_stream 默认 true），http 直链必须关掉
-			var params = 'cid=' + DEMO_CID + '&aid=' + DEMO_AID + '&autoplay=1&as_wide=1';
+			var params = 'cid=' + DEMO_CID + '&aid=' + DEMO_AID + '&autoplay=0&as_wide=1';
 			if (/^http:\/\//i.test(url)) {
 				params += '&enable_ssl_stream=0';
 			}
@@ -905,22 +928,34 @@
 				return;
 			}
 
-				setStatus('已用 ' + type.toUpperCase() + ' 链路启动播放器：' + url, 'ok');
+			/* 起播后多试几次（播放器初始化是异步的），把可能被误判的迷你模式纠正回来 */
+			[300, 900, 2000, 4000].forEach(function (ms) {
+				setTimeout(keepNormalMode, ms);
+			});
+			if (!window.__demoMiniGuard) {
+				window.__demoMiniGuard = true;
+				// 窗口尺寸变化后播放器会重新判定，这里再兜一次
+				window.addEventListener('resize', function () {
+					setTimeout(keepNormalMode, 250);
+				});
+			}
+
+			setStatus('已用 ' + type.toUpperCase() + ' 链路启动播放器：' + url, 'ok');
 
 		});
 	}
 
 	function start() {
 		if (!window.jQuery) {
-			setStatus('缺少 jQuery：请先执行 node public/build-demo.mjs 准备演示文件', 'error');
+			setStatus('缺少 jQuery：请先执行 node public/build.mjs 准备演示文件', 'error');
 			return;
 		}
 		if (!window.EmbedPlayer) {
-			setStatus('缺少播放器产物 video.js：请先执行 npm run build 与 node public/build-demo.mjs', 'error');
+			setStatus('缺少播放器产物 video.js：请先执行 npm run build 与 node public/build.mjs', 'error');
 			return;
 		}
-		var url = getParam('url') || (document.getElementById('demo-url') || {}).value || '';
-		var input = document.getElementById('demo-url');
+		var url = getParam('url') || (document.getElementById('demo-vd-url') || {}).value || '';
+		var input = document.getElementById('demo-vd-url');
 		if (input) {
 			input.value = url;
 		}
@@ -930,7 +965,7 @@
 	function startPlayback(url, detectFrom, label) {
 		state.url = url;
 		state.type = guessType(detectFrom || url);
-		var input = document.getElementById('demo-url');
+		var input = document.getElementById('demo-vd-url');
 		if (input && label) {
 			input.value = label;
 		}
@@ -941,7 +976,7 @@
 		if (!url) {
 			return;
 		}
-		var input = document.getElementById('demo-url');
+		var input = document.getElementById('demo-vd-url');
 		if (input) {
 			input.value = url;
 		}
@@ -1017,17 +1052,21 @@
 			}
 			localObjectURL = '';
 		}
-		var input = document.getElementById('demo-url');
+		var input = document.getElementById('demo-vd-url');
 		if (input) {
 			input.value = '';
 		}
-		var file = document.getElementById('demo-file');
+		var file = document.getElementById('demo-vd-file');
 		if (file) {
 			file.value = '';
 		}
 		var bofqi = document.getElementById('bilibili-player') || document.getElementById('bofqi');
 		if (bofqi) {
-			bofqi.innerHTML = '';
+			bofqi.innerHTML = '<div id="player_placeholder" class="player"></div>';
+		}
+		var bgbtn = document.getElementsByClassName("bgray-btn-wrap")?.[0];
+		if (bgbtn) {
+			bgbtn?.remove?.();
 		}
 		setStatus('已移除视频，可以重新输入地址或选择本地文件', 'ok');
 	};

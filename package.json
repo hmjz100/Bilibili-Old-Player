@@ -5,7 +5,8 @@
 	"scripts": {
 		"tsc": "tsc -p ./tsconfig.json  --noEmit --removeComments",
 		"build-as3-danmaku": "node ./as3-danmaku/build.mjs",
-		"build": "node ./as3-danmaku/build.mjs && node .vscode/esbuild.mjs"
+		"build": "node ./as3-danmaku/build.mjs && node .vscode/esbuild.mjs",
+		"deploy": "node ./as3-danmaku/build.mjs && node .vscode/esbuild.mjs && node public/build.mjs"
 	},
 	"dependencies": {
 		"@jsc/ace": "file:ace",

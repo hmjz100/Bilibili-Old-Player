@@ -1,0 +1,300 @@
+:root {
+	color-scheme: dark;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	min-height: 100%;
+	background: #17181c;
+	color: #e6e8eb;
+	font: 12px Helvetica Neue,Helvetica,Arial,Microsoft Yahei,Hiragino Sans GB,Heiti SC,WenQuanYi Micro Hei,sans-serif;
+}
+
+.wrap {
+	max-width: 1240px;
+	margin: 0 auto;
+	padding: 20px 16px 0;
+}
+
+/* 两行输入（视频 / 弹幕）：输入框 + 按钮 + 右侧清除按钮 */
+.row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.row .label {
+	color: #9aa4b2;
+	font-size: 13px;
+}
+
+.row input[type="text"] {
+	flex: 1 1 420px;
+	min-width: 220px;
+	padding: 8px 10px;
+	border: 1px solid #2f3238;
+	border-radius: 4px;
+	background: #1f2126;
+	color: inherit;
+	font: inherit;
+}
+
+.row select,
+.row button {
+	padding: 8px 14px;
+	border: 1px solid #2f3238;
+	border-radius: 4px;
+	background: #26282e;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.row button.primary {
+	border-color: #00a1d6;
+	background: #00a1d6;
+	color: #fff;
+}
+
+.row button:hover {
+	border-color: #00a1d6;
+}
+
+/* 清除按钮：一个小 × */
+.row button.clear {
+	flex: 0 0 auto;
+	width: 34px;
+	padding: 8px 0;
+	color: #9aa4b2;
+	line-height: 1;
+	text-align: center;
+}
+
+.row button.clear:hover {
+	color: #ef9a9a;
+	border-color: #d63a3a;
+}
+
+/* 旧版 .bar 选择器保留兼容 */
+.bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+h1 {
+	margin: 0 0 4px;
+	font-size: 20px;
+}
+
+.tip {
+	margin: 0 0 5px;
+	color: #9aa4b2;
+	font-size: 13px;
+}
+
+.tip code {
+	color: #7fd6ef;
+}
+
+.bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.bar input[type="text"] {
+	flex: 1 1 380px;
+	min-width: 240px;
+	padding: 8px 10px;
+	border: 1px solid #2f3238;
+	border-radius: 4px;
+	background: #1f2126;
+	color: inherit;
+	font: inherit;
+}
+
+.bar select,
+.bar button {
+	padding: 8px 14px;
+	border: 1px solid #2f3238;
+	border-radius: 4px;
+	background: #26282e;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+
+.bar button.primary {
+	border-color: #00a1d6;
+	background: #00a1d6;
+	color: #fff;
+}
+
+.bar button:hover {
+	border-color: #00a1d6;
+}
+
+.samples button {
+	padding: 4px 10px;
+	border: 1px solid #2f3238;
+	border-radius: 999px;
+	background: #1f2126;
+	color: #c7ccd3;
+	font: inherit;
+	cursor: pointer;
+}
+
+/* 只在出错时出现的顶部提示条：纯边框、恒定蓝色、可关闭 */
+.demo-error {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin: 0 0 12px;
+	padding: 8px 8px 8px 12px;
+	border: 1px solid #00a1d6;
+	border-radius: 4px;
+	background: #1f2126;
+	color: #7fd6ef;
+	word-break: break-all;
+}
+
+.demo-error[hidden] {
+	display: none;
+}
+
+.demo-error button {
+	flex: 0 0 auto;
+	padding: 2px 10px;
+	border: 1px solid #2f3238;
+	border-radius: 4px;
+	background: #26282e;
+	color: #9aa4b2;
+	font: inherit;
+	line-height: 1.4;
+	cursor: pointer;
+}
+
+.demo-error button:hover {
+	border-color: #00a1d6;
+	color: #7fd6ef;
+}
+
+.player-box {
+	position: relative;
+	/*border-top: 1px solid #e5e9ef;
+	border-bottom: 1px solid #e5e9ef;
+	background-color: #f6f9fa;*/
+	padding: 22px 0;
+	text-align: center
+}
+
+/* 播放器容器 */
+.bili-icon,
+.icon {
+	display: inline-block;
+	background-image: url(//static.hdslb.com/images/base/icons.png)
+}
+
+.bili-wrapper {
+	margin: 0 auto;
+	width: 1160px;
+}
+
+.bili-wrapper .l-con {
+	float: left;
+	width: 900px
+}
+
+@media screen and (max-width:1400px) {
+	.bili-wrapper {
+		width: 980px;
+		min-height: 688px;
+	}
+
+	.bili-wrapper .l-con {
+		width: 720px
+	}
+}
+
+.bili-wrapper .r-con {
+	width: 260px;
+	float: right
+}
+
+.bili-wrapper.dragover {
+	outline-color: #00a1d6;
+}
+
+.bili-wrapper.dragover::after {
+	content: "松手即用本地文件播放";
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.55);
+	color: #7fd6ef;
+	font-size: 16px;
+	pointer-events: none;
+	z-index: 10;
+}
+
+#bofqi:has(#player_placeholder.player),
+.bilibili-player.mode-widescreen:not(.mode-webfullscreen, .mode-fullscreen)>.bilibili-player-area {
+	color: #000;
+	background-color: #fff;
+	border-radius: 4px;
+}
+
+.bilibili-player:not(.mode-widescreen, .mode-webfullscreen, .mode-fullscreen)>.bilibili-player-area {
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+}
+
+.bilibili-player:not(.mode-widescreen, .mode-webfullscreen, .mode-fullscreen)>.bilibili-player-auxiliary-area {
+	overflow: hidden;
+	color: #000;
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+}
+
+#bofqi .player {
+	min-width: 980px;
+	min-height: 620px;
+	display: block;
+}
+
+@media screen and (min-width:1400px) {
+	#bofqi .player {
+		width: 1160px;
+		height: 720px
+	}
+}
+
+.video-toolbar-module {
+	height: 80px;
+	background: #fff;
+	color: #444;
+	border: 1px solid #e5e9ef;
+	border-radius: 4px;
+	position: relative;
+	margin-top: 20px;
+	z-index: 100
+}
+
+/* 演示页固定用 HTML5 播放器，隐藏播放器自带的「Flash/HTML5 播放器」切换按钮 */
+.bilibili-player-setting-menu-list[value="change_flash"],
+.bilibili-player-setting-menu-list[value="change_h5"] {
+	display: none !important;
+}

@@ -33,14 +33,13 @@ jobs:
       - name: Node - 安装依赖
         run: npm install
 
-      - name: Node - 构建播放器
-        run: npm run build
+      - name: Node - 构建播放器与演示
+        run: npm run deploy
 
       - name: 准备演示页
         run: |
-          node public/build-demo.mjs
           touch public/.nojekyll
-          rm -rf public/build-demo.mjs
+          rm -rf public/build.mjs
 
       - name: 推送到展示分支（gh-pages）
         env:
