@@ -74,13 +74,16 @@ mklink /D dist ..\Bilibili-Old\extension\player
 ## License
 [MIT](LICENSE)
 
-
 ## 其他版本
-- ?\~2018 HTML5 Player (`0.11.10-a0fd2c52`, `2018-12-25T08:24:45.903Z`)  
-  https://static.hdslb.com/player/js/bilibiliPlayer.beta.min.js
-- ?\~2019 HTML5 Player (`0.11.21-8c739d8a`, `2019-10-30T07:57:34.584Z`)  
-  https://static.hdslb.com/player/js/bilibiliPlayer.min.js
-- 2019\~2022 HTML5 Player (`2.89.0-f5ff168e`, `2022-12-15T08:46:31.527Z`)  
-  https://s1.hdslb.com/bfs/static/player/main/video.js
-- 2022\~至今 NanoPlayer (`4.8.49-rc.8263.0-290e07ff`, `2024-10-16T10:26:15+08:00`)
-https://s1.hdslb.com/bfs/static/player/main/core.6dcbfdb4.js
+- 2017\~2018 bilibili-player HTML5 Player Beta
+  - (`0.11.10-a0fd2c52`, `2018-12-25T08:24:45.903Z`) https://static.hdslb.com/player/js/bilibiliPlayer.beta.min.js
+- 2016\~2019 bilibili-player HTML5 Player
+  - (`0.11.21-8c739d8a`, `2019-10-30T07:57:34.584Z`) https://static.hdslb.com/player/js/bilibiliPlayer.min.js
+- 2018\~2022 jsc-player HTML5 Player
+  - (`2.89.0-f5ff168e`, `2022-12-15T08:46:31.527Z`) https://s1.hdslb.com/bfs/static/player/main/video.js
+- 2022\~至今 bpx-player NanoPlayer
+  - (latest) https://s1.hdslb.com/bfs/static/player/main/core.js
+  - (`4.10.5-rc.5717.0-ba29f2a7`, `2026-09-22T15:30:58+08:00`) https://s1.hdslb.com/bfs/static/player/main/core.92ef0ecc.js
+  - (`4.9.28-rc.4579.0-83ad0c0c`, `2026-06-16T16:58:30+08:00`) https://s1.hdslb.com/bfs/static/player/main/core.b237bb82.js
+  - (`4.8.41-rc.8542.0-31f82a5f`, `2024-11-04T16:23:20+08:00`) https://s1.hdslb.com/bfs/static/player/main/core.7b23e544.js
+  - (`4.8.49-rc.8263.0-290e07ff`, `2024-10-16T10:26:15+08:00`) https://s1.hdslb.com/bfs/static/player/main/core.6dcbfdb4.js
