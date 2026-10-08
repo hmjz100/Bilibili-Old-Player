@@ -850,7 +850,9 @@
 		}
 		var name = url.split('/').pop().split('?')[0] || 'danmaku';
 		setStatus('正在下载弹幕：' + url + ' …');
-		fetch(url, {mode: 'no-cors'})
+		let _url = new URL(`https://corsproxy.io/?key=94f3f2c0`);
+		_url.searchParams.set("url", url);
+		fetch(_url.href)
 			.then(function (r) {
 				if (!r.ok) {
 					throw new Error('HTTP ' + r.status);
