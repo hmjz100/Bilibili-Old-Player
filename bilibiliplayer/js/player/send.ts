@@ -83,7 +83,7 @@ class Send {
         this.STATUS_TIPS[STATE.SEND_STATUS_NORMAL] = '您可以在这里输入弹幕吐槽哦~';
         this.STATUS_TIPS[
             STATE.SEND_STATUS_TYPING
-        ] = `<a href="${URLS.PAGE_HELP}#弹幕相关" target="_blank">弹幕礼仪 ></a>`;
+        ] = `<a href="${URLS.PAGE_HELP}#弹幕相关?qid=357" target="_blank">弹幕礼仪 ></a>`;
         this.STATUS_TIPS[STATE.SEND_STATUS_BEYOND_WORDS] = '';
         this.STATUS_TIPS[STATE.SEND_STATUS_SENT] = '您可以在这里输入弹幕吐槽哦~';
         this.STATUS_TIPS[STATE.SEND_STATUS_CLOSED] = '本视频的弹幕功能已被关闭';
@@ -155,7 +155,7 @@ class Send {
 	<div class="${prefix}-video-danmaku-wrap"></div>
 	<input class="${prefix}-video-danmaku-input" placeholder="你可以在这里输入弹幕吐槽哦~" />
 	<div class="${prefix}-video-hint">
-		<a href="${URLS.PAGE_HELP}#弹幕相关" target="_blank">弹幕礼仪 ></a>
+		<a href="${URLS.PAGE_HELP}#弹幕相关?qid=357" target="_blank">弹幕礼仪 ></a>
 	</div>
 	<div class="${prefix}-video-btn-send">发送 ></div>
 </div>`;

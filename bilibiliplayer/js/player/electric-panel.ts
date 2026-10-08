@@ -144,7 +144,7 @@ class ElectricPanel {
             moduleName +
             '-link" href="' +
             URLS.PAGE_HELP +
-            '#充电计划?id=14cf474095a44dae9a497fba17fa55d7" target="_blank"><i class="' +
+            '#充电计划id=14cf474095a44dae9a497fba17fa55d7?qid=380" target="_blank"><i class="' +
             prefix +
             '-iconfont icon-24question"></i>如何才能进入鸣谢名单?</a>' +
             '</div>'
