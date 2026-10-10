@@ -9,7 +9,7 @@
     "events": "^3.3.0",
     "hammerjs": "^2.0.8",
     "jszip": "^3.10.2",
-    "konva": "^8.3.12",
+    "konva": "^10.7.1",
     "pako": "^2.0.4",
     "popmotion": "^11.0.5",
     "stylefire": "^7.0.3",
