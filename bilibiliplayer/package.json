@@ -6,6 +6,7 @@
   "author": "bilibili",
   "license": "MIT",
   "dependencies": {
+    "events": "^3.3.0",
     "hammerjs": "^2.0.8",
     "jszip": "^3.10.2",
     "konva": "^8.3.12",
@@ -15,6 +16,7 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@types/events": "^3.0.3",
     "@types/hammerjs": "^2.0.46",
     "@types/pako": "^2.0.0",
     "@types/three": "^0.186.0"

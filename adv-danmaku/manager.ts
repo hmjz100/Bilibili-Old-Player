@@ -7,6 +7,35 @@ interface IManagerOptions {
     [key: string]: any;
 }
 
+interface ILayoutBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+interface ILayoutCache {
+    cw: number;
+    ch: number;
+    vw: number;
+    vh: number;
+    bh: number;
+}
+
+/**
+ * 高级弹幕（mode 7）的坐标属于「作者当时那块画布」。
+ * 16:9 的作品通常就是 810x456（与弹幕存档站的基准一致），但不同作品的画布大小并不相同：
+ * 画布比 456 高的作品，如果一律按 456 换算，底部的弹幕就会被挤出画面。
+ * 因此这里把 456 当作「最小基准」，再按弹幕自身的纵向分布估计实际画布高度。
+ */
+const DEFAULT_BASE_HEIGHT = 456;
+/** 内容底边到画布底边留的余量（作者排版时通常也留了一点） */
+const CONTENT_BASE_MARGIN = 1.04;
+/** 估计值的上限，避免个别越界坐标把画布撑得过大 */
+const MAX_BASE_HEIGHT_RATIO = 2.2;
+/** 估计值变化超过这个比例才调整，避免播放过程中来回缩放 */
+const BASE_HEIGHT_HYSTERESIS = 0.05;
+
 export interface ITextData extends Object {
     dmid: string;
     mode: number;
@@ -44,6 +73,19 @@ class Manager {
     sTime: number;
     dmexposure = 0;
 
+    /** 基准画布尺寸（弹幕坐标所在的坐标系） */
+    private _baseWidth = (DEFAULT_BASE_HEIGHT * 16) / 9;
+    private _baseHeight = DEFAULT_BASE_HEIGHT;
+    /** 由弹幕内容估计出的画布高度与其缓存 */
+    private baseEstimate = 0;
+    private baseEstimateCount = 0;
+    private appliedBaseHeight = 0;
+    /** 基准画布 -> 视频显示区域的映射（等比缩放 + 居中） */
+    private viewScale = 1;
+    private viewX = 0;
+    private viewY = 0;
+    private layoutCache: ILayoutCache | null = null;
+
     constructor(config: IManagerOptions) {
         this.container = config.container;
         this.config = Utils.assign(
@@ -53,10 +95,13 @@ class Manager {
                 videoSpeed: 1,
                 visible: true,
                 type: 'div',
+                baseHeight: 0, // 0 = 按弹幕内容自动估计（下限 456），>0 = 固定画布高度
+                baseWidth: 0, // <=0 = 按视频宽高比推导，>0 = 固定画布宽度
                 setType: (type: string) => { },
                 blockJudge: (options: any) => { },
                 getType: () => this.config.type,
                 getDanmakuNumber: () => this.config.danmakuNumber,
+                getVideoElement: null as null | (() => HTMLVideoElement | null),
             },
             config,
         );
@@ -68,6 +113,31 @@ class Manager {
         this.cdmList = []; // 当前高级弹幕列表
         this.visableStatus = this.config.visible;
         this.initialType = this.getType();
+    }
+
+    /** 基准画布宽度（弹幕 x 坐标的最大有效值，百分比坐标也基于它换算） */
+    get baseWidth(): number {
+        return this._baseWidth;
+    }
+
+    /** 基准画布高度（弹幕 y 坐标的最大有效值，百分比坐标也基于它换算） */
+    get baseHeight(): number {
+        return this._baseHeight;
+    }
+
+    /**
+     * 当前的「基准画布 -> 显示区域」映射。
+     * 测试预览等外挂图层可以复用同一套映射，保证和正式弹幕层一致。
+     */
+    getLayout() {
+        this.updateLayout();
+        return {
+            x: this.viewX,
+            y: this.viewY,
+            scale: this.viewScale,
+            width: this._baseWidth,
+            height: this._baseHeight,
+        };
     }
 
     count(): number {
@@ -100,14 +170,7 @@ class Manager {
         if (this.dmList.length && this.visableStatus && this.canvas) {
             this.config.setType(type);
             this.typeChangeCheck();
-            this.getType() === 'div'
-                ? (this.canvas.innerHTML = '')
-                : this.ctx.clearRect(
-                    0,
-                    0,
-                    (<HTMLCanvasElement>this.canvas).width,
-                    (<HTMLCanvasElement>this.canvas).height,
-                );
+            this.getType() === 'div' ? (this.canvas.innerHTML = '') : this.clearCanvas();
             this.refreshCdmList();
             this.drawDanmaku();
             return type;
@@ -120,6 +183,8 @@ class Manager {
         if (len < 1) {
             return null;
         }
+        this.updateLayout();
+        const scale = this.viewScale || 1;
         const gifContainer = document.createElement('canvas');
         const giftext = <CanvasRenderingContext2D>gifContainer.getContext('2d');
         gifContainer.width = this.container.offsetWidth;
@@ -127,9 +192,20 @@ class Manager {
         for (let i = 0; i < len; i++) {
             const danmaku = this.cdmList[i];
             danmaku.refresh(this.sTime, true);
-            const x = danmaku.options.x - danmaku.options.offsetX;
-            const y = danmaku.options.y - danmaku.options.offsetY - 5;
-            danmaku.drawStatus && giftext.drawImage(<HTMLCanvasElement>danmaku.img, x, y);
+            if (!danmaku.drawStatus || !danmaku.img) {
+                continue;
+            }
+            const img = <HTMLCanvasElement>danmaku.img;
+            // 基准坐标 -> 容器坐标
+            const x = this.viewX + (danmaku.options.x - danmaku.options.offsetX) * scale;
+            const y = this.viewY + (danmaku.options.y - danmaku.options.offsetY - 2) * scale;
+            const w = (img.width || 0) * scale;
+            const h = (img.height || 0) * scale;
+            if (w > 0 && h > 0) {
+                giftext.drawImage(img, x, y, w, h);
+            } else {
+                giftext.drawImage(img, x, y);
+            }
         }
         return gifContainer;
     }
@@ -193,10 +269,8 @@ class Manager {
 
     resize() {
         if (this.createStatus) {
-            if (this.getType() !== 'div') {
-                (<HTMLCanvasElement>this.canvas).width = this.container.offsetWidth;
-                (<HTMLCanvasElement>this.canvas).height = this.container.offsetHeight;
-            }
+            this.updateLayout(true);
+            this.clearCanvas();
             this.drawDanmaku();
         }
         this.testManager && this.testManager.resize();
@@ -222,13 +296,7 @@ class Manager {
                 this.canvas.innerHTML = '';
             }
         } else {
-            this.ctx &&
-                this.ctx.clearRect(
-                    0,
-                    0,
-                    (<HTMLCanvasElement>this.canvas).width,
-                    (<HTMLCanvasElement>this.canvas).height,
-                );
+            this.clearCanvas();
         }
         this.cdmList.forEach(function (d: Danmaku) {
             d.renderStatus = false;
@@ -242,7 +310,9 @@ class Manager {
         if (this.getType() === 'div') {
             return this.searchCSSArea(e.clientX || 0, e.clientY || 0);
         } else {
-            return this.searchCanvasArea(e.offsetX || 0, e.offsetY || 0);
+            // canvas 模式的 offsetX/offsetY 是画布 CSS 像素，换算回基准坐标
+            const scale = this.viewScale || 1;
+            return this.searchCanvasArea((e.offsetX || 0) / scale, (e.offsetY || 0) / scale);
         }
     }
 
@@ -250,9 +320,9 @@ class Manager {
         const danmaku = this.buildTextData(textData);
         danmaku!.options.stime = Date.now();
         if (this.getType() === 'div') {
-            this.testManager = new TestCSS3(this.container);
+            this.testManager = new TestCSS3(this.container, this);
         } else {
-            this.testManager = new TestCanvas2D(this.container);
+            this.testManager = new TestCanvas2D(this.container, this);
         }
         this.testManager.test(danmaku!);
     }
@@ -288,6 +358,7 @@ class Manager {
         this.getType() === 'div' ? this.createDiv() : this.createCanvas();
         this.container && this.container.appendChild(this.canvas);
         this.createStatus = true;
+        this.updateLayout(true);
         this.render();
     }
 
@@ -300,6 +371,7 @@ class Manager {
         canvas.style.height = '100%';
         canvas.style.background = 'transparent';
         canvas.style.zIndex = '10';
+        canvas.style.transformOrigin = canvas.style.webkitTransformOrigin = '0 0';
         this.canvas = canvas;
     }
 
@@ -314,6 +386,220 @@ class Manager {
         canvas.style.zIndex = '10';
         this.ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
         this.canvas = canvas;
+    }
+
+    /** 取播放器里的 video 元素，用于计算视频实际显示区域 */
+    private getVideoElement(): HTMLVideoElement | null {
+        const getter = this.config.getVideoElement;
+        if (typeof getter === 'function') {
+            const video = getter();
+            if (video) {
+                return video;
+            }
+        }
+        const parent = this.container && this.container.parentElement;
+        if (!parent || !parent.querySelector) {
+            return null;
+        }
+        return <HTMLVideoElement>parent.querySelector('video');
+    }
+
+    /**
+     * 视频实际画面框（去掉 letterbox / pillarbox 之后的内容区），坐标相对弹幕容器左上角。
+     * 容器本身比画面大（黑边、内边距）时不能直接用容器尺寸，否则高级弹幕会整体偏移。
+     */
+    private getVideoBox(cw: number, ch: number, video: HTMLVideoElement | null): ILayoutBox {
+        const full: ILayoutBox = { x: 0, y: 0, width: cw, height: ch };
+        if (!video || !video.videoWidth || !video.videoHeight || !video.getBoundingClientRect || !this.container) {
+            return full;
+        }
+        const containerRect = this.container.getBoundingClientRect();
+        const videoRect = video.getBoundingClientRect();
+        const ew = videoRect.width;
+        const eh = videoRect.height;
+        if (!ew || !eh) {
+            return full;
+        }
+        const x = videoRect.left - containerRect.left;
+        const y = videoRect.top - containerRect.top;
+        let fit = 'fill';
+        if (window.getComputedStyle) {
+            const style = window.getComputedStyle(video);
+            fit = style.objectFit || (<any>style)['object-fit'] || 'fill';
+        }
+        // object-fit: fill 时画面被拉伸到整个元素，直接用元素框
+        if (fit === 'fill' || fit === 'cover') {
+            return { x: x, y: y, width: ew, height: eh };
+        }
+        const ratio = video.videoWidth / video.videoHeight;
+        let w = ew;
+        let h = ew / ratio;
+        if (h > eh) {
+            h = eh;
+            w = eh * ratio;
+        }
+        return { x: x + (ew - w) / 2, y: y + (eh - h) / 2, width: w, height: h };
+    }
+
+    /**
+     * 用已加载弹幕的纵向分布估计作者画布高度。
+     * 取「每条弹幕最低位置 + 自身文字高度」的 90 分位再留 4% 余量：
+     * 既不会像最大值那样被个别越界坐标带跑，也不会让成片的底部内容被切掉。
+     * 例：810x456 的作品估计值仍是 456（保持原样），而 851x561 的作品会得到 ~549。
+     */
+    private estimateBaseHeight(): number {
+        const list = this.dmList;
+        const len = list ? list.length : 0;
+        if (!len) {
+            return 0;
+        }
+        // 弹幕会随播放分段装入，按 5% 的量级重算即可，避免每帧排序
+        if (this.baseEstimate && len < this.baseEstimateCount * 1.05) {
+            return this.baseEstimate;
+        }
+        const bottoms: number[] = [];
+        for (let i = 0; i < len; i++) {
+            const options = list[i].options;
+            const lines = (options.text || '').split(/\r|\n/).length;
+            const bottom = Math.max(options.startY, options.endY) + options.size * lines;
+            if (isFinite(bottom) && bottom > 0) {
+                bottoms.push(bottom);
+            }
+        }
+        this.baseEstimateCount = len;
+        if (!bottoms.length) {
+            return (this.baseEstimate = 0);
+        }
+        bottoms.sort((a, b) => a - b);
+        const p90 = bottoms[Math.min(bottoms.length - 1, Math.floor(bottoms.length * 0.9))];
+        return (this.baseEstimate = p90 * CONTENT_BASE_MARGIN);
+    }
+
+    /** 最终生效的画布高度：固定值优先，其次用估计值（夹在 [456, 456*2.2] 之间并做迟滞） */
+    private resolveBaseHeight(): number {
+        const configured = Number(this.config.baseHeight);
+        if (configured > 0) {
+            return configured;
+        }
+        const estimated = this.estimateBaseHeight();
+        if (!estimated) {
+            return this.appliedBaseHeight || DEFAULT_BASE_HEIGHT;
+        }
+        const target = Math.min(
+            Math.max(estimated, DEFAULT_BASE_HEIGHT),
+            DEFAULT_BASE_HEIGHT * MAX_BASE_HEIGHT_RATIO,
+        );
+        if (
+            !this.appliedBaseHeight ||
+            Math.abs(target - this.appliedBaseHeight) / this.appliedBaseHeight > BASE_HEIGHT_HYSTERESIS
+        ) {
+            this.appliedBaseHeight = target;
+        }
+        return this.appliedBaseHeight;
+    }
+
+    /**
+     * 重算「基准画布 -> 视频显示区域」的映射。
+     * 容器尺寸（全屏 / 宽屏 / resize）、视频分辨率或画布高度变化时才真正重算，避免每帧强制重排。
+     */
+    private updateLayout(force?: boolean): boolean {
+        const container = this.container;
+        if (!container) {
+            return false;
+        }
+        const cw = container.offsetWidth;
+        const ch = container.offsetHeight;
+        if (!cw || !ch) {
+            return false;
+        }
+        const video = this.getVideoElement();
+        const vw = video ? video.videoWidth || 0 : 0;
+        const vh = video ? video.videoHeight || 0 : 0;
+        const baseHeight = this.resolveBaseHeight();
+        const cache = this.layoutCache;
+        if (
+            !force &&
+            cache &&
+            cache.cw === cw &&
+            cache.ch === ch &&
+            cache.vw === vw &&
+            cache.vh === vh &&
+            cache.bh === baseHeight
+        ) {
+            return false;
+        }
+        this.layoutCache = { cw: cw, ch: ch, vw: vw, vh: vh, bh: baseHeight };
+
+        const box = this.getVideoBox(cw, ch, video);
+        let baseWidth = Number(this.config.baseWidth);
+        if (!(baseWidth > 0)) {
+            // 基准画布按视频宽高比推导：16:9 即 810x456
+            baseWidth = box.height > 0 ? (baseHeight * box.width) / box.height : (baseHeight * 16) / 9;
+        }
+        this._baseWidth = baseWidth;
+        this._baseHeight = baseHeight;
+
+        // 等比缩放后居中，宽高比不一致时也不会被拉伸
+        const scaleX = box.width / baseWidth;
+        const scaleY = box.height / baseHeight;
+        const scale = Math.min(scaleX, scaleY) || 1;
+        this.viewScale = scale;
+        this.viewX = box.x + (box.width - baseWidth * scale) / 2;
+        this.viewY = box.y + (box.height - baseHeight * scale) / 2;
+        this.applyLayerLayout();
+        return true;
+    }
+
+    /** 把映射结果写到弹幕图层上：div 用 CSS transform，canvas 用像素尺寸 + ctx 变换 */
+    private applyLayerLayout() {
+        if (!this.canvas) {
+            return;
+        }
+        if (this.getType() === 'div') {
+            const el = <HTMLElement>this.canvas;
+            el.style.left = this.viewX + 'px';
+            el.style.top = this.viewY + 'px';
+            el.style.width = this._baseWidth + 'px';
+            el.style.height = this._baseHeight + 'px';
+            el.style.transformOrigin = el.style.webkitTransformOrigin = '0 0';
+            el.style.transform = el.style.webkitTransform = 'scale(' + this.viewScale + ')';
+        } else {
+            const el = <HTMLCanvasElement>this.canvas;
+            const dpr = window.devicePixelRatio || 1;
+            const w = this._baseWidth * this.viewScale;
+            const h = this._baseHeight * this.viewScale;
+            el.style.left = this.viewX + 'px';
+            el.style.top = this.viewY + 'px';
+            el.style.width = w + 'px';
+            el.style.height = h + 'px';
+            const pw = Math.max(1, Math.round(w * dpr));
+            const ph = Math.max(1, Math.round(h * dpr));
+            if (el.width !== pw || el.height !== ph) {
+                el.width = pw;
+                el.height = ph;
+            }
+            this.applyCtxTransform();
+        }
+    }
+
+    /** canvas 模式下把基准坐标映射到画布像素（含 devicePixelRatio） */
+    private applyCtxTransform() {
+        if (this.getType() === 'div' || !this.ctx || !this.ctx.setTransform) {
+            return;
+        }
+        const dpr = window.devicePixelRatio || 1;
+        const k = this.viewScale * dpr;
+        this.ctx.setTransform(k, 0, 0, k, 0, 0);
+    }
+
+    private clearCanvas() {
+        if (!this.ctx || !this.canvas || this.getType() === 'div') {
+            return;
+        }
+        const el = <HTMLCanvasElement>this.canvas;
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        this.ctx.clearRect(0, 0, el.width, el.height);
+        this.applyCtxTransform();
     }
 
     private buildTextData(textData: ITextData): Danmaku | null {
@@ -347,8 +633,8 @@ class Manager {
                 startY: parseFloat(text[1]),
                 endX: typeof text[7] === 'undefined' ? parseFloat(text[0]) : parseFloat(text[7]),
                 endY: typeof text[8] === 'undefined' ? parseFloat(text[1]) : parseFloat(text[8]),
-                canvasW: this.container.offsetWidth,
-                canvasH: this.container.offsetHeight,
+                canvasW: this.baseWidth,
+                canvasH: this.baseHeight,
                 container: this.container,
             };
             if (text.length >= 7) {
@@ -436,10 +722,10 @@ class Manager {
                 ? this.config.getDanmakuNumber()
                 : this.config.danmakuNumber;
         this.updateSTime();
+        // 每帧校正一次布局：全屏 / 宽屏 / resize / 视频分辨率变化后不需要额外的事件也能自愈
+        this.updateLayout();
         this.typeChangeCheck();
-        this.getType() === 'div'
-            ? (this.canvas.innerHTML = '')
-            : this.ctx.clearRect(0, 0, (<HTMLCanvasElement>this.canvas).width, (<HTMLCanvasElement>this.canvas).height);
+        this.getType() === 'div' ? (this.canvas.innerHTML = '') : this.clearCanvas();
         this.refreshCdmList();
         this.drawDanmaku();
     }
@@ -500,14 +786,7 @@ class Manager {
         }
         if (force) {
             if (this.getType() !== 'div') {
-                this.ctx &&
-                    this.ctx.clearRect &&
-                    this.ctx.clearRect(
-                        0,
-                        0,
-                        (<HTMLCanvasElement>this.canvas).width,
-                        (<HTMLCanvasElement>this.canvas).height,
-                    );
+                this.clearCanvas();
             }
             this.drawDanmaku();
         }
@@ -552,6 +831,7 @@ class Manager {
             this.container.innerHTML = '';
             this.initialType === 'div' ? this.createDiv() : this.createCanvas();
             this.container && this.container.appendChild(this.canvas);
+            this.updateLayout(true);
         }
     }
 
@@ -623,18 +903,16 @@ class Manager {
     clear() {
         this.dmList = [];
         this.cdmList = [];
+        // 换稿件会复用同一个实例，画布估计要一起重置
+        this.baseEstimate = 0;
+        this.baseEstimateCount = 0;
+        this.appliedBaseHeight = 0;
         if (this.getType() === 'div') {
             if (this.canvas) {
                 this.canvas.innerHTML = '';
             }
         } else {
-            this.ctx &&
-                this.ctx.clearRect(
-                    0,
-                    0,
-                    (<HTMLCanvasElement>this.canvas).width,
-                    (<HTMLCanvasElement>this.canvas).height,
-                );
+            this.clearCanvas();
         }
     }
 

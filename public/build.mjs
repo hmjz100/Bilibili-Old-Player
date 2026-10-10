@@ -62,7 +62,7 @@ for (const task of tasks) {
 		continue;
 	}
 	fs.copyFileSync(from, task.to);
-	console.log(`复制 ${task.name} <- ${path.relative(root, from)}`);
+	console.log(`复制 ${task.name}：${path.relative(root, from)} -> ${path.relative(root, task.to)}`);
 }
 
 if (missing.length) {

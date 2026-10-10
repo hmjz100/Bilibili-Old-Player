@@ -230,8 +230,9 @@ class Danmaku {
             if (!this.img || isShot) {
                 this.img = this.getCanvasImg(isShot);
             }
-            const w = options.container.offsetWidth;
-            const h = options.container.offsetHeight;
+            // 这里的所有坐标都在「基准画布」里，映射到显示区域由 manager 的图层变换完成
+            const w = this.manager.baseWidth;
+            const h = this.manager.baseHeight;
             options.canvasW = w;
             options.canvasH = h;
             if (this.percent.startX || this.percent.startY) {
@@ -290,8 +291,8 @@ class Danmaku {
         const options = this.options;
         const canvas = document.createElement('canvas');
         const ctx = <CanvasRenderingContext2D>canvas.getContext('2d');
-        const w = options.container.offsetWidth;
-        const h = options.container.offsetHeight;
+        const w = this.manager.baseWidth;
+        const h = this.manager.baseHeight;
         let measure;
 
         ctx.font = 'bold ' + options.size + 'px ' + options.family + ', Arial, Helvetica, sans-serif';
@@ -360,7 +361,20 @@ class Danmaku {
         wrap.style.width = '100%';
         wrap.style.height = '100%';
         wrap.style.perspective = wrap.style.webkitPerspective = '288.1473083496094px';
+        wrap.style.pointerEvents = 'none';
+        wrap.style.overflow = 'visible';
         cell.style.display = 'inline-block';
+        // <pre> 自带 margin/padding 且默认是静态定位，不显式清零会让弹幕整体下移一个字号高度
+        cell.style.position = 'absolute';
+        cell.style.top = '0px';
+        cell.style.left = '0px';
+        cell.style.margin = '0';
+        cell.style.padding = '0';
+        cell.style.border = '0';
+        cell.style.background = 'transparent';
+        cell.style.overflow = 'visible';
+        cell.style.verticalAlign = 'top';
+        cell.style.whiteSpace = 'pre';
         cell.style.font = 'bold ' + options.size + 'px ' + options.family + ', Arial, Helvetica, sans-serif';
         cell.style.textAlign = 'left';
         cell.style.lineHeight = '1';
@@ -399,8 +413,8 @@ class Danmaku {
         const lines = text.split('\r');
         const options = this.options;
         const len = lines.length;
-        const w = options.container.offsetWidth;
-        const h = options.container.offsetHeight;
+        const w = this.manager.baseWidth;
+        const h = this.manager.baseHeight;
         maxWidth = maxWidth || 0;
 
         // Reset canvas

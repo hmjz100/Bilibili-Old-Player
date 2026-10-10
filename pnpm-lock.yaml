@@ -28,10 +28,10 @@ importers:
         version: link:b-io
       '@jsc/bas-danmaku':
         specifier: file:bas-danmaku
-        version: file:bas-danmaku
+        version: link:bas-danmaku
       '@jsc/bilibiliplayer':
         specifier: file:bilibiliplayer
-        version: file:bilibiliplayer
+        version: link:bilibiliplayer
       '@jsc/combo':
         specifier: file:combo
         version: link:combo
@@ -49,7 +49,7 @@ importers:
         version: link:event-log
       '@jsc/flv.js':
         specifier: file:flv.js
-        version: file:flv.js
+        version: link:flv.js
       '@jsc/must-h5':
         specifier: file:must-h5
         version: link:must-h5
@@ -64,7 +64,7 @@ importers:
         version: link:pbploader
       '@jsc/player-auxiliary':
         specifier: file:player-auxiliary
-        version: file:player-auxiliary
+        version: link:player-auxiliary
       '@jsc/playurl':
         specifier: file:playurl
         version: link:playurl
@@ -82,7 +82,7 @@ importers:
         version: link:websocket-broadcast
       '@shared/utils':
         specifier: file:shared
-        version: file:shared
+        version: link:shared
       axios:
         specifier: ^1.18.0
         version: 1.20.0(debug@4.4.3)
@@ -144,11 +144,14 @@ importers:
 
   bilibiliplayer:
     dependencies:
+      events:
+        specifier: ^3.3.0
+        version: 3.3.0
       hammerjs:
         specifier: ^2.0.8
         version: 2.0.8
       jszip:
-        specifier: ^3.10.1
+        specifier: ^3.10.2
         version: 3.10.2
       konva:
         specifier: ^8.3.12
@@ -166,8 +169,11 @@ importers:
         specifier: ^0.186.1
         version: 0.186.1
     devDependencies:
+      '@types/events':
+        specifier: ^3.0.3
+        version: 3.0.3
       '@types/hammerjs':
-        specifier: ^2.0.41
+        specifier: ^2.0.46
         version: 2.0.46
       '@types/pako':
         specifier: ^2.0.0
@@ -205,12 +211,18 @@ importers:
       clipboard:
         specifier: ^2.0.11
         version: 2.0.11
+      events:
+        specifier: ^3.3.0
+        version: 3.3.0
       underscore:
         specifier: ^1.13.8
         version: 1.13.8
     devDependencies:
+      '@types/events':
+        specifier: ^3.0.3
+        version: 3.0.3
       '@types/underscore':
-        specifier: ^1.11.4
+        specifier: ^1.13.0
         version: 1.13.0
 
   playurl: {}
@@ -229,10 +241,10 @@ importers:
         version: 2.3.0
     devDependencies:
       '@types/events':
-        specifier: ^3.0.0
+        specifier: ^3.0.3
         version: 3.0.3
       '@types/md5':
-        specifier: ^2.3.2
+        specifier: ^2.3.6
         version: 2.3.6
 
   speed-tester: {}

@@ -45,10 +45,21 @@ export const Display = new (class {
     get stageHeight() {
         return Player.height;
     }
+    /**
+     * `$.width/$.height` 是「播放窗口尺寸」（当年 Flash 播放器的视频窗口，含黑边），
+     * 也就是代码弹幕的坐标空间；视频自身分辨率请用 `Player.videoWidth/videoHeight`。
+     */
     get width() {
-        return Player.videoWidth;
+        return Player.width;
     }
     get height() {
+        return Player.height;
+    }
+    /** 视频等比例尺寸 */
+    get videoWidth() {
+        return Player.videoWidth;
+    }
+    get videoHeight() {
         return Player.videoHeight;
     }
     get stage() {

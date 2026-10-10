@@ -17,7 +17,7 @@ export default class PanoramicManager {
     cameraFovInit = 90;
     camera!: THREE.PerspectiveCamera;
     private renderer!: THREE.WebGLRenderer;
-    private geometry: any;//THREE.SphereBufferGeometry;
+    private geometry!: THREE.SphereGeometry;
     private texture!: THREE.VideoTexture;
     private material!: THREE.MeshBasicMaterial;
     private mesh!: THREE.Mesh;
@@ -85,7 +85,7 @@ export default class PanoramicManager {
     }
 
     private initGeometry() {
-        this.geometry = new (<any>THREE).SphereBufferGeometry(
+        this.geometry = new THREE.SphereGeometry(
             this.renderWidth / 2,
             360, // 水平分段数（沿着经线分段）
             180, // 垂直分段数（沿着纬线分段）

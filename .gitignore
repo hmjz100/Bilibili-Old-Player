@@ -8,3 +8,6 @@ dist
 public/scripts/jquery.min.js
 public/scripts/video.js
 public/styles/video.css
+
+# 本地验证用临时目录
+.temp

@@ -86,6 +86,10 @@ class AdvDanmakuManager {
                             return 0;
                         }
                     },
+                    // 高级弹幕要按「视频实际画面区域」等比居中，所以把 video 元素交给弹幕引擎
+                    getVideoElement() {
+                        return that.player.video || null;
+                    },
                 },
                 this.config,
             ),
@@ -99,6 +103,10 @@ class AdvDanmakuManager {
     }
     get dmexposure() {
         return this.advDanmaku?.dmexposure || 0;
+    }
+    /** 当前生效的作者画布高度（代码弹幕层复用它，保证两套弹幕坐标系一致） */
+    get baseHeight() {
+        return this.advDanmaku ? this.advDanmaku.baseHeight : 0;
     }
     private globalEvents() {
         // 217001

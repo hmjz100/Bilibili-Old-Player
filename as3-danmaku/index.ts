@@ -16,6 +16,10 @@ interface IOption {
     timeSyncFunc?: Function;
     /** 弹幕屏蔽检查 */
     blockJudge?: Function;
+    /** 作者画布高度（与高级弹幕层共用同一套基准；<=0 用默认值） */
+    getBaseHeight?: () => number;
+    /** 取播放器的 video 元素，用于计算视频实际显示区域 */
+    getVideoElement?: () => HTMLVideoElement | null;
 }
 /** 播放器实例 */
 interface IPlayer {
@@ -46,6 +50,24 @@ interface IWorkerMessage {
     obj?: unknown;
     mode?: 'log' | 'warn' | 'err' | 'fatal';
 }
+interface IStageBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+interface IStageCache {
+    cw: number;
+    ch: number;
+    bw: number;
+    bh: number;
+}
+/**
+ * 代码弹幕（mode8）的坐标属于当年 Flash 播放器的视频窗口：
+ * 高度约 456（16:9 即 810x456，4:3 即 608x456），宽度随视频比例。
+ * 直接把坐标当像素用的话，播放器尺寸一变（全屏 / 宽屏）就会整体偏到左上且比例不对。
+ */
+const DEFAULT_STAGE_HEIGHT = 456;
 export class As3Danmaku {
     /** 配置 */
     protected options: IOption;
@@ -76,6 +98,14 @@ export class As3Danmaku {
     wrap?: HTMLDivElement;
     protected resolutionWidth!: number;
     protected resolutionHeight!: number;
+    /** 作者画布（代码弹幕的坐标系）尺寸 */
+    protected baseWidth = 0;
+    protected baseHeight = 0;
+    /** 作者画布 -> 视频画面区的映射（等比缩放 + 居中） */
+    protected viewScale = 1;
+    protected viewX = 0;
+    protected viewY = 0;
+    protected stageCache: IStageCache | null = null;
     /** 沙箱 */
     protected worker?: Worker;
     /** 主机与沙箱通信频道列表 */
@@ -106,9 +136,7 @@ export class As3Danmaku {
             this.container.appendChild(this.wrap);
             this.scriptContext = new ScriptingContext(this);
 
-            if (this.resolutionWidth && this.resolutionHeight) {
-                this.resize();
-            }
+            this.updateStage(true);
 
             this.startRender();
 
@@ -285,11 +313,120 @@ export class As3Danmaku {
             debug.warn('未捕获沙箱信息', data);
         }
     }
+    /** 取播放器里的 video 元素，用于计算视频实际显示区域 */
+    protected getVideoElement(): HTMLVideoElement | null {
+        const getter = this.options.getVideoElement;
+        if (typeof getter === 'function') {
+            const video = getter();
+            if (video) {
+                return video;
+            }
+        }
+        const parent = this.container && this.container.parentElement;
+        if (!parent || !parent.querySelector) {
+            return null;
+        }
+        return <HTMLVideoElement>parent.querySelector('video');
+    }
+    /** 视频实际画面框（去掉 letterbox / pillarbox 之后的内容区），坐标相对弹幕容器左上角 */
+    protected getVideoBox(cw: number, ch: number, video: HTMLVideoElement | null): IStageBox {
+        const full: IStageBox = { x: 0, y: 0, width: cw, height: ch };
+        if (!video || !video.videoWidth || !video.videoHeight || !video.getBoundingClientRect || !this.container) {
+            return full;
+        }
+        const containerRect = this.container.getBoundingClientRect();
+        const videoRect = video.getBoundingClientRect();
+        const ew = videoRect.width;
+        const eh = videoRect.height;
+        if (!ew || !eh) {
+            return full;
+        }
+        const x = videoRect.left - containerRect.left;
+        const y = videoRect.top - containerRect.top;
+        let fit = 'fill';
+        if (window.getComputedStyle) {
+            const style = window.getComputedStyle(video);
+            fit = style.objectFit || (<any>style)['object-fit'] || 'fill';
+        }
+        if (fit === 'fill' || fit === 'cover') {
+            return { x: x, y: y, width: ew, height: eh };
+        }
+        const ratio = video.videoWidth / video.videoHeight;
+        let w = ew;
+        let h = ew / ratio;
+        if (h > eh) {
+            h = eh;
+            w = eh * ratio;
+        }
+        return { x: x + (ew - w) / 2, y: y + (eh - h) / 2, width: w, height: h };
+    }
+    /** 作者画布尺寸：高度取高级弹幕层估计出的基准（默认 456），宽度随视频比例 */
+    protected resolveStageSize(): { width: number; height: number } {
+        const video = this.getVideoElement();
+        const vw = this.resolutionWidth || (video ? video.videoWidth : 0) || 16;
+        const vh = this.resolutionHeight || (video ? video.videoHeight : 0) || 9;
+        const hint = typeof this.options.getBaseHeight === 'function' ? Number(this.options.getBaseHeight()) : 0;
+        const height = hint > 0 && isFinite(hint) ? hint : DEFAULT_STAGE_HEIGHT;
+        return { width: (height * vw) / vh, height: height };
+    }
+    /**
+     * 重算「作者画布 -> 视频画面区」的等比映射，并把结果写到弹幕图层上。
+     * 容器尺寸 / 视频分辨率 / 画布高度变化时才真正重算，避免每帧强制重排。
+     */
+    protected updateStage(force?: boolean): boolean {
+        if (!this.wrap || !this.container) {
+            return false;
+        }
+        const cw = this.container.offsetWidth;
+        const ch = this.container.offsetHeight;
+        if (!cw || !ch) {
+            return false;
+        }
+        const size = this.resolveStageSize();
+        const cache = this.stageCache;
+        if (!force && cache && cache.cw === cw && cache.ch === ch && cache.bw === size.width && cache.bh === size.height) {
+            return false;
+        }
+        this.stageCache = { cw: cw, ch: ch, bw: size.width, bh: size.height };
+        this.baseWidth = size.width;
+        this.baseHeight = size.height;
+
+        const box = this.getVideoBox(cw, ch, this.getVideoElement());
+        const scale = Math.min(box.width / size.width, box.height / size.height) || 1;
+        this.viewScale = scale;
+        this.viewX = box.x + (box.width - size.width * scale) / 2;
+        this.viewY = box.y + (box.height - size.height * scale) / 2;
+
+        const el = this.wrap;
+        el.style.left = this.viewX + 'px';
+        el.style.top = this.viewY + 'px';
+        el.style.width = size.width + 'px';
+        el.style.height = size.height + 'px';
+        el.style.transformOrigin = el.style.webkitTransformOrigin = '0 0';
+        el.style.transform = el.style.webkitTransform = 'scale(' + scale + ')';
+        this.updateDimension();
+        return true;
+    }
+    /** 渲染弹幕 */
+    protected renderDanmaku() {
+        this.updateTime();
+        // 每帧校正一次映射：全屏 / 宽屏 / resize 之后不依赖额外事件也能自愈
+        this.updateStage();
+        this.refreshCdmList();
+        this.drawDanmaku();
+    }
     /** 更新分辨率信息 */
     protected updateDimension() {
+        if (!this.baseWidth || !this.baseHeight) {
+            const size = this.resolveStageSize();
+            this.baseWidth = size.width;
+            this.baseHeight = size.height;
+        }
+        // 沙箱里的 $.width/$.height/$.stageWidth/$.stageHeight 都是「作者画布」尺寸，
+        // 这样代码弹幕的排版与播放器实际大小解耦，缩放交给图层变换
         this.sendWorkerMessage('Update:DimensionUpdate', {
-            stageWidth: this.wrap?.offsetWidth,
-            stageHeight: this.wrap?.offsetHeight,
+            stageWidth: this.baseWidth,
+            stageHeight: this.baseHeight,
             screenWidth: window.screen.width,
             screenHeight: window.screen.height,
             videoWidth: this.resolutionWidth,
@@ -323,12 +460,6 @@ export class As3Danmaku {
         window['requestAnimationFrame'](() => {
             this.render();
         });
-    }
-    /** 渲染弹幕 */
-    protected renderDanmaku() {
-        this.updateTime();
-        this.refreshCdmList();
-        this.drawDanmaku();
     }
     /** 时间校准 */
     protected updateTime() {
@@ -440,21 +571,12 @@ export class As3Danmaku {
             }
         }
     }
-    /** 更新画布大小 */
+    /** 更新视频分辨率（并重算作者画布 -> 画面区的映射） */
     resize(width = this.resolutionWidth, height = this.resolutionHeight) {
         this.resolutionWidth = width;
         this.resolutionHeight = height;
-        if (this.inited && this.wrap) {
-            const containerWidth = this.container.offsetWidth;
-            const containerHeight = this.container.offsetHeight;
-            if (containerWidth / width > containerHeight / height) {
-                this.wrap.style.width = (((containerHeight / height) * width) / containerWidth) * 100 + '%';
-                this.wrap.style.height = '100%';
-            } else {
-                this.wrap.style.width = '100%';
-                this.wrap.style.height = (((containerWidth / width) * height) / containerHeight) * 100 + '%';
-            }
-            this.updateDimension();
+        if (this.inited) {
+            this.updateStage(true);
         }
     }
     /** 清屏 */

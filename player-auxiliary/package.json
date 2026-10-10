@@ -7,9 +7,11 @@
   "license": "MIT",
   "dependencies": {
     "clipboard": "^2.0.11",
+    "events": "^3.3.0",
     "underscore": "^1.13.8"
   },
   "devDependencies": {
+    "@types/events": "^3.0.3",
     "@types/underscore": "^1.13.0"
   }
 }

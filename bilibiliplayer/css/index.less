@@ -1151,6 +1151,32 @@ input {
 	pointer-events: none
 }
 
+/* 高级弹幕（mode 7）：图层是「基准画布 + 等比缩放」。
+   JS 侧已经给每个弹幕节点写好了完整的内联样式，这里只做兜底，
+   防止宿主页面/主题里的 div、pre 规则（margin、padding、white-space）把坐标顶偏。
+   选择器只覆盖「图层 -> 弹幕包裹层 -> pre」这一层，避免影响引擎用来量文字的临时节点。 */
+.bilibili-player .bilibili-player-area .bilibili-player-video-wrap .bilibili-player-video-adv-danmaku>div>div {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	overflow: visible
+}
+
+.bilibili-player .bilibili-player-area .bilibili-player-video-wrap .bilibili-player-video-adv-danmaku>div>div>pre {
+	display: inline-block;
+	position: absolute;
+	top: 0;
+	left: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	white-space: pre;
+	word-wrap: normal;
+	overflow: visible
+}
+
 .bilibili-player .bilibili-player-area .bilibili-player-video-wrap .bilibili-player-video-bas-danmaku {
 	position: absolute;
 	overflow: hidden;

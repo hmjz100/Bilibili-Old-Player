@@ -2070,6 +2070,9 @@ class Player {
 				blockJudge: (options: any) => {
 					return this.block.judge(options);
 				},
+				// 代码弹幕与高级弹幕共用同一个「作者画布」，避免两套坐标系各偏各的
+				getBaseHeight: () => this.advDanmaku?.baseHeight || 0,
+				getVideoElement: () => this.video || null,
 			}, this);
 
 			if (
