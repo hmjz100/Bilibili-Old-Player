@@ -157,8 +157,8 @@ importers:
         specifier: ^10.7.1
         version: 10.7.1
       pako:
-        specifier: ^2.0.4
-        version: 2.2.0
+        specifier: ^3.0.2
+        version: 3.0.2
       popmotion:
         specifier: ^11.0.5
         version: 11.0.5
@@ -176,8 +176,8 @@ importers:
         specifier: ^2.0.46
         version: 2.0.46
       '@types/pako':
-        specifier: ^2.0.0
-        version: 2.0.4
+        specifier: ^3.0.0
+        version: 3.0.0
       '@types/three':
         specifier: ^0.186.0
         version: 0.186.0
@@ -439,8 +439,9 @@ packages:
   '@types/md5@2.3.6':
     resolution: {integrity: sha512-WD69gNXtRBnpknfZcb4TRQ0XJQbUPZcai/Qdhmka3sxUR3Et8NrXoeAoknG/LghYHTf4ve795rInVYHBTQdNVA==}
 
-  '@types/pako@2.0.4':
-    resolution: {integrity: sha512-VWDCbrLeVXJM9fihYodcLiIv0ku+AlOa/TQ1SvYOaBuyrSKgEcro95LJyIsJ4vSo6BXIxOKxiJAat04CmST9Fw==}
+  '@types/pako@3.0.0':
+    resolution: {integrity: sha512-MtIzg1Ul1GxhHZLq6oSKvWQENKqmfK1fdaW+SDcPJe7+YcJVo6AbmkW0BvGFH6+559+hEuCwdXZZe8F85lBPkA==}
+    deprecated: This is a stub types definition. pako provides its own type definitions, so you do not need this installed.
 
   '@types/stats.js@0.17.4':
     resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
@@ -822,6 +823,9 @@ packages:
   pako@2.2.0:
     resolution: {integrity: sha512-zJq6RP/5q+TO2OpFV3FHzlPnFjmkb7Nc99a5SNjJE+uu/PkpChs+NIZSSzbBoD+6kjiISXjfYdwj1ZRQ81dz/w==}
 
+  pako@3.0.2:
+    resolution: {integrity: sha512-uBv6IT2aT1A78iU6dpNEbf6+CyhlV/6g9JlJs9kpgjFGFhruIICVRysF/W0SLzXg5+hCl+KroH7e4YUyfEmgLg==}
+
   popmotion@11.0.5:
     resolution: {integrity: sha512-la8gPM1WYeFznb/JqF4GiTkRRPZsfaj2+kCxqQgr2MJylMmIKUwBfWW8Wa5fml/8gmtlD5yI01MP1QCZPWmppA==}
 
@@ -1020,7 +1024,9 @@ snapshots:
 
   '@types/md5@2.3.6': {}
 
-  '@types/pako@2.0.4': {}
+  '@types/pako@3.0.0':
+    dependencies:
+      pako: 2.2.0
 
   '@types/stats.js@0.17.4': {}
 
@@ -1372,6 +1378,8 @@ snapshots:
   pako@1.0.11: {}
 
   pako@2.2.0: {}
+
+  pako@3.0.2: {}
 
   popmotion@11.0.5:
     dependencies:
