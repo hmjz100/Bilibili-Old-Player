@@ -34,7 +34,7 @@
 		"@jsc/speed-tester": "file:speed-tester",
 		"@jsc/websocket-broadcast": "file:websocket-broadcast",
 		"@shared/utils": "file:shared",
-		"axios": "^1.18.0",
+		"axios": "^1.21.0",
 		"clipboard": "^2.0.11",
 		"events": "^3.3.0",
 		"fs-extra": "^11.3.5",
